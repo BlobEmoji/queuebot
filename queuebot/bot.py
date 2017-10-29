@@ -2,6 +2,7 @@ import importlib
 import inspect
 import logging
 from pathlib import Path
+from typing import List
 
 from discord import Message, User
 from discord.ext import commands
@@ -19,7 +20,11 @@ class Queuebot(commands.Bot):
         # Remove default help command.
         self.remove_command('help')
 
+        #: OAuth2 application owner.
         self.owner: User = None
+
+        #: List of extension names to load. We store this because `self.extensions` is volatile during reload.
+        self.to_load: List[str] = None
 
     async def on_ready(self):
         # Grab owner from application info.
@@ -29,9 +34,7 @@ class Queuebot(commands.Bot):
 
     @property
     def admins(self):
-        return set(
-            [self.owner.id] + getattr(config, 'admins', [])
-        )
+        return set([self.owner.id] + getattr(config, 'admins', []))
 
     async def on_message(self, msg: Message):
         # Ignore messages from bots.
@@ -42,6 +45,25 @@ class Queuebot(commands.Bot):
         await self.wait_until_ready()
 
         await self.process_commands(msg)
+
+    def load_extension(self, name: str):
+        module = importlib.import_module(name)
+
+        # Find Cog subclasses in the module.
+        cogs = inspect.getmembers(
+            module, predicate=lambda obj: inspect.isclass(obj) and issubclass(obj, Cog) and obj is not Cog
+        )
+
+        # Add all Cog subclasses.
+        for _, cog in cogs:
+            logger.info('Automatically adding cog: %s', cog.__name__)
+            self.add_cog(cog(self))
+
+        # Call setup(), if there is one.
+        if hasattr(module, 'setup'):
+            module.setup(self)
+
+        self.extensions[name] = module
 
     def discover_exts(self, directory: str):
         """Loads all extensions from a directory."""
@@ -55,18 +77,7 @@ class Queuebot(commands.Bot):
         logger.info('Loading extensions: %s', exts)
 
         for ext in exts:
-            name = 'queuebot.cogs.' + ext
-            module = importlib.import_module(name)
+            self.load_extension('queuebot.cogs.' + ext)
 
-            cogs = inspect.getmembers(
-                module, predicate=lambda obj: inspect.isclass(obj) and issubclass(obj, Cog) and obj is not Cog
-            )
-
-            for name, cog in cogs:
-                logger.info('Automatically adding cog: %s', cog.__name__)
-                self.add_cog(cog(self))
-
-            if hasattr(module, 'setup'):
-                module.setup(self)
-
-            self.extensions[name] = module
+        self.to_load = list(self.extensions.keys()).copy()
+        logger.info('To load: %s', self.to_load)

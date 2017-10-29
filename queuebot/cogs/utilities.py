@@ -1,9 +1,13 @@
 import inspect
+import logging
 
-from discord.ext.commands import Context, command, Paginator, Group
+from discord.ext.commands import Context, command, Paginator, Group, group
 
+from queuebot.checks import is_bot_admin
 from queuebot.cog import Cog
 from queuebot.utils import Timer, Table
+
+logger = logging.getLogger(__name__)
 
 
 class Utilities(Cog):
@@ -48,6 +52,24 @@ class Utilities(Cog):
 
         for page in paginator.pages:
             await ctx.send(page)
+
+    @group(aliases=['w'])
+    @is_bot_admin()
+    async def wrench(self, ctx: Context):
+        """Bot Administration"""
+
+    @wrench.command()
+    async def reload(self, ctx: Context):
+        """Reloads all extensions."""
+        try:
+            for name in ctx.bot.to_load:
+                ctx.bot.unload_extension(name)
+                ctx.bot.load_extension(name)
+        except Exception:
+            await ctx.send("An error has occurred while reloading.")
+            logger.exception('Error has occurred while reloading:')
+        else:
+            await ctx.send('Reloaded.')
 
     @command()
     async def ping(self, ctx: Context):
