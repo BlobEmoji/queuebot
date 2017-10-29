@@ -1,6 +1,6 @@
 from discord.ext.commands import Context, command
 
-from queuebot.util import Timer
+from queuebot.utils import Timer
 from ..bot import Queuebot
 
 

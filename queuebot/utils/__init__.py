@@ -1,4 +1,10 @@
-import time
+"""Various utilities."""
+
+# Exported.
+from .formatting import *
+
+# Internal imports.
+from time import monotonic as _monotonic
 
 
 class Timer:
@@ -11,11 +17,11 @@ class Timer:
         return self.end - self.begin
 
     def __enter__(self):
-        self.begin = time.monotonic()
+        self.begin = _monotonic()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.end = time.monotonic()
+        self.end = _monotonic()
 
     def __str__(self):
         return f"{round(self.duration * 1000, 2)}ms"
