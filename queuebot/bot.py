@@ -17,6 +17,9 @@ class Queuebot(commands.Bot):
         # Remove default help command.
         self.remove_command('help')
 
+    async def on_ready(self):
+        logger.info('Ready! Logged in as %s (%d)', self.user, self.user.id)
+
     def discover_exts(self, directory: str):
         """Loads all extensions from a directory."""
         IGNORE = {'__pycache__', '__init__'}
