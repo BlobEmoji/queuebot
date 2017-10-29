@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from discord.ext import commands
-
 import config
 from queuebot.bot import Queuebot
 
@@ -14,4 +12,5 @@ handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(me
 logging.getLogger().addHandler(handler)  # Log everything to queuebot.log.
 
 bot = Queuebot(command_prefix='q!')
+bot.discover_exts('queuebot/cogs')
 bot.run(config.token)
