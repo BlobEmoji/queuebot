@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import List
 
+from asyncpg.pool import create_pool, Pool
 from discord import Message, User
 from discord.ext import commands
 
@@ -26,6 +27,10 @@ class Queuebot(commands.Bot):
         #: List of extension names to load. We store this because `self.extensions` is volatile during reload.
         self.to_load: List[str] = None
 
+        # Database connection to PostgreSQL
+        self.db: Pool = None
+        self.loop.create_task(self.pg_connect())
+
     async def on_ready(self):
         # Grab owner from application info.
         self.owner = (await self.application_info()).owner
@@ -45,6 +50,9 @@ class Queuebot(commands.Bot):
         await self.wait_until_ready()
 
         await self.process_commands(msg)
+
+    async def pg_connect(self):
+        self.db = await create_pool(**config.pg_credentials)
 
     def load_extension(self, name: str):
         module = importlib.import_module(name)
