@@ -3,8 +3,10 @@ import inspect
 import logging
 from pathlib import Path
 
+from discord import Message, User
 from discord.ext import commands
 
+import config
 from queuebot.cog import Cog
 
 logger = logging.getLogger(__name__)
@@ -17,8 +19,29 @@ class Queuebot(commands.Bot):
         # Remove default help command.
         self.remove_command('help')
 
+        self.owner: User = None
+
     async def on_ready(self):
+        # Grab owner from application info.
+        self.owner = (await self.application_info()).owner
+
         logger.info('Ready! Logged in as %s (%d)', self.user, self.user.id)
+
+    @property
+    def admins(self):
+        return set(
+            [self.owner.id] + getattr(config, 'admins', [])
+        )
+
+    async def on_message(self, msg: Message):
+        # Ignore messages from bots.
+        if msg.author.bot:
+            return
+
+        # Do not process commands until we are ready.
+        await self.wait_until_ready()
+
+        await self.process_commands(msg)
 
     def discover_exts(self, directory: str):
         """Loads all extensions from a directory."""
