@@ -41,6 +41,10 @@ class Queuebot(commands.Bot):
     def admins(self):
         return set([self.owner.id] + getattr(config, 'admins', []))
 
+    @property
+    def council_roles(self):
+        return set(getattr(config, 'council_roles', []))
+
     async def on_message(self, msg: Message):
         # Ignore messages from bots.
         if msg.author.bot:

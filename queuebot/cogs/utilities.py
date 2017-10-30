@@ -3,7 +3,7 @@ import logging
 
 from discord.ext.commands import Context, command, Paginator, Group, group
 
-from queuebot.checks import is_bot_admin
+from queuebot.checks import is_bot_admin, is_council
 from queuebot.cog import Cog
 from queuebot.utils import Timer, Table
 
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Utilities(Cog):
     @command()
+    @is_council()
     async def help(self, ctx: Context):
         """Shows this help message."""
 
@@ -54,11 +55,11 @@ class Utilities(Cog):
             await ctx.send(page)
 
     @group(aliases=['w'])
-    @is_bot_admin()
     async def wrench(self, ctx: Context):
         """Bot Administration"""
 
     @wrench.command()
+    @is_bot_admin()
     async def reload(self, ctx: Context):
         """Reloads all extensions."""
         try:
@@ -72,6 +73,7 @@ class Utilities(Cog):
             await ctx.send('Reloaded.')
 
     @command()
+    @is_council()
     async def ping(self, ctx: Context):
         """Makes the bot respond with \"Pong!\""""
         with Timer() as timer:
@@ -79,6 +81,7 @@ class Utilities(Cog):
         await msg.edit(content=f'Pong! {timer}')
 
     @command()
+    @is_council()
     async def roles(self, ctx: Context):
         """Views roles in this server."""
         table = Table('ID', 'Name', 'Colour')
