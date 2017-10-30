@@ -2,7 +2,7 @@
 import io
 import re
 
-from discord import Message, Guild, PartialReactionEmoji, HTTPException, utils, File
+from discord import File, Guild, HTTPException, Message, PartialReactionEmoji, utils
 from discord.ext.commands import Context, command
 
 import config
@@ -33,14 +33,17 @@ class BlobQueue(Cog):
             return
 
         if not message.attachments:
-            return await message.delete()
+            await message.delete()
+            return await message.author.send(
+                'Your suggestion didn\'nt have any files attached, please repost the message and attach the suggestion!'
+            )
 
         attachment = message.attachments[0]
 
         if not attachment.filename.endswith(('.png', '.jpg')):
             await message.delete()
             return await message.author.send(
-                'Your suggestion didn\'nt have any files attached, please repost the message and attach the suggestion!'
+                'Your suggestion image must be in png or jpg format, please resubmit it after changing the format!'
             )
 
         buffer = io.BytesIO()
@@ -53,7 +56,7 @@ class BlobQueue(Cog):
             await message.delete()
 
             log = self.bot.get_channel(config.bot_log)
-            await log.send('Couldn\'t process suggestion due to having to free emoji or guild slots!')
+            await log.send('Couldn\'t process suggestion due to having no free emoji or guild slots!')
 
             return await message.author.send(
                 'Your suggestion couldn\'nt be processed! The bot owner has been notified, please try again later.'
