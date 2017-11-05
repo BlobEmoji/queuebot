@@ -28,8 +28,7 @@ class Queuebot(commands.Bot):
         self.to_load: List[str] = None
 
         # Database connection to PostgreSQL
-        self.db: Pool = None
-        self.loop.create_task(self.pg_connect())
+        self.db: Pool = kwargs.pop('db')
 
     async def on_ready(self):
         # Grab owner from application info.
@@ -54,9 +53,6 @@ class Queuebot(commands.Bot):
         await self.wait_until_ready()
 
         await self.process_commands(msg)
-
-    async def pg_connect(self):
-        self.db = await create_pool(**config.pg_credentials)
 
     def load_extension(self, name: str):
         module = importlib.import_module(name)

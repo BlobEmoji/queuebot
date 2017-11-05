@@ -64,7 +64,7 @@ class Suggestion:
         )
 
         # Calculate the column to modify depending on which emoji was reacted with.
-        vote_target = 'upvotes' if vote_emoji == config.approve_emoji_id else 'downvotes'
+        vote_target = 'upvotes' if vote_emoji.id == config.approve_emoji_id else 'downvotes'
 
         await self.db.execute(
             f"""
@@ -205,7 +205,7 @@ class BlobQueue(Cog):
         if not is_vote(emoji, channel_id) or user_id == self.bot.user.id:
             return
 
-        log.debug('Received reaction.')
+        log.debug('Received reaction add.')
 
         async with self.voting_lock:
             s = await Suggestion.get_from_message(message_id)
@@ -215,7 +215,7 @@ class BlobQueue(Cog):
         if not is_vote(emoji, channel_id) or user_id == self.bot.user.id:
             return
 
-        log.debug('Received reaction.')
+        log.debug('Received reaction remove.')
 
         async with self.voting_lock:
             s = await Suggestion.get_from_message(message_id)
