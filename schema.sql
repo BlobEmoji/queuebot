@@ -1,21 +1,21 @@
-create table if not exists suggestions (
+CREATE TABLE IF NOT EXISTS suggestions (
     -- suggestion id
-    idx serial primary key,
+    idx SERIAL PRIMARY KEY,
 
     -- user that submitted the emoji
-    user_id bigint,
+    user_id BIGINT,
 
     -- message id in the #council-queue
-    council_message_id bigint,
+    council_message_id BIGINT,
 
     -- message id in the #approval-queue
-    public_message_id bigint,
+    public_message_id BIGINT,
 
     -- emoji data
-    emoji_id bigint,
-    emoji_name text,
+    emoji_id BIGINT,
+    emoji_name TEXT,
 
     -- votes
-    upvotes int default 0,
-    downvotes int default 0
+    upvotes INT DEFAULT 0,
+    downvotes INT DEFAULT 0
 );

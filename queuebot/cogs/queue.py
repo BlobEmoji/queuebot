@@ -90,13 +90,13 @@ class BlobQueue(Cog):
 
         await self.db.execute(
             """
-            insert into suggestions (
+            INSERT INTO suggestions (
                 user_id,
                 council_message_id,
                 emoji_id,
                 emoji_name
             )
-            values (
+            VALUES (
                 $1, $2, $3, $4
             )
             """,
