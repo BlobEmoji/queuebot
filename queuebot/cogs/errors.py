@@ -16,7 +16,14 @@ IGNORED_ERRORS = {
 }
 
 
+def get_trace(error: Exception) -> str:
+    return ''.join(traceback.format_exception(type(error), error, error.__traceback__, limit=15))
+
+
 class Errors(Cog):
+    async def on_error(self, exception):
+        logger.fatal('Bot error: %s', get_trace(exception))
+
     async def on_command_error(self, ctx: Context, exception):
         # TODO: Handle more errors.
         if type(exception) in IGNORED_ERRORS:
@@ -24,9 +31,7 @@ class Errors(Cog):
 
         if isinstance(exception, commands.CommandInvokeError):
             # Log the error.
-            error = exception.original
-            trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__, limit=15))
-            logger.fatal('Bot error: %s', trace)
+            logger.fatal('Bot error: %s', get_trace(exception.original))
 
             try:
                 await ctx.send("Sorry, a fatal error has occurred.")
