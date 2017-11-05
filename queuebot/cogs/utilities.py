@@ -1,7 +1,7 @@
 import inspect
 import logging
 
-from discord.ext.commands import Context, command, Paginator, Group, group
+from discord.ext import commands
 
 from queuebot.checks import is_bot_admin, is_council
 from queuebot.cog import Cog
@@ -11,21 +11,21 @@ logger = logging.getLogger(__name__)
 
 
 class Utilities(Cog):
-    @command()
+    @commands.command()
     @is_council()
-    async def help(self, ctx: Context):
+    async def help(self, ctx: commands.Context):
         """Shows this help message."""
 
         # Use a Paginator, so if we go over the 2,000 character limit, we will send multiple messages.
-        paginator = Paginator(prefix='', suffix='')
+        paginator = commands.Paginator(prefix='', suffix='')
 
         # Header
         paginator.add_line(f'**{ctx.bot.user.name} Command Reference:**')
         paginator.add_line()
 
         # `Group`s are `Command`s, so we cannot use `Command` in our `isinstance` checks here.
-        regular_commands = [c for c in ctx.bot.commands if not isinstance(c, Group)]
-        groups = [c for c in ctx.bot.commands if isinstance(c, Group)]
+        regular_commands = [c for c in ctx.bot.commands if not isinstance(c, commands.Group)]
+        groups = [c for c in ctx.bot.commands if isinstance(c, commands.Group)]
 
         def format_cmd(cmd):
             checks = [check.__qualname__ for check in cmd.checks]
@@ -57,13 +57,13 @@ class Utilities(Cog):
         for page in paginator.pages:
             await ctx.send(page)
 
-    @group(aliases=['w'])
-    async def wrench(self, ctx: Context):
+    @commands.group(aliases=['w'])
+    async def wrench(self, ctx: commands.Context):
         """Bot Administration"""
 
     @wrench.command()
     @is_bot_admin()
-    async def reload(self, ctx: Context):
+    async def reload(self, ctx: commands.Context):
         """Reloads all extensions."""
         try:
             for name in ctx.bot.to_load:
@@ -75,17 +75,17 @@ class Utilities(Cog):
         else:
             await ctx.send('Reloaded.')
 
-    @command()
+    @commands.command()
     @is_council()
-    async def ping(self, ctx: Context):
+    async def ping(self, ctx: commands.Context):
         """Makes the bot respond with \"Pong!\""""
         with Timer() as timer:
             msg = await ctx.send('Po\N{EM DASH}')
         await msg.edit(content=f'Pong! {timer}')
 
-    @command()
+    @commands.command()
     @is_council()
-    async def roles(self, ctx: Context):
+    async def roles(self, ctx: commands.Context):
         """Views roles in this server."""
         table = Table('ID', 'Name', 'Colour')
 
