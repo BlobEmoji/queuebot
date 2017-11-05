@@ -31,10 +31,10 @@ class Errors(Cog):
 
         if isinstance(exception, commands.CommandInvokeError):
             # Log the error.
-            logger.fatal('Bot error: %s', get_trace(exception.original))
+            logger.error('Bot error: %s', get_trace(exception.original))
 
             try:
-                await ctx.send("Sorry, a fatal error has occurred.")
+                await ctx.send("Sorry, an error has occurred.")
             except HTTPException:
                 pass
         elif isinstance(exception, commands.UserInputError):
