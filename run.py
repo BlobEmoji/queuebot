@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 import logging
-
 import sys
+from time import sleep
 
 import config
 from queuebot.bot import Queuebot
+
+# wait for postgres to start
+sleep(2)
 
 logging.getLogger('discord').setLevel(logging.INFO)
 logging.getLogger('queuebot').setLevel(logging.DEBUG)
