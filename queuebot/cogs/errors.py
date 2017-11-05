@@ -21,8 +21,8 @@ def get_trace(error: Exception) -> str:
 
 
 class Errors(Cog):
-    async def on_error(self, exception):
-        logger.fatal('Bot error: %s', get_trace(exception))
+    async def on_error(self, *args, **kwargs):
+        logger.exception('Error!')
 
     async def on_command_error(self, ctx: Context, exception):
         # TODO: Handle more errors.

@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
+import asyncio
+import enum
 import io
+import logging
 import re
 
 from discord import File, Guild, HTTPException, Message, PartialReactionEmoji, utils
-from discord.ext.commands import Context, command
+from discord.ext.commands import Context, command, group
 
 import config
+from queuebot.checks import is_bot_admin
 from queuebot.cog import Cog
 from queuebot.utils.formatting import name_id
 
 
 # matches the full string or the name of a custom emoji (since replacements for those might be posted)
 NAME_RE = re.compile(r'(\w{1,32}):?\d?')
+
+log = logging.getLogger(__name__)
 
 
 def is_vote(emoji: PartialReactionEmoji, channel_id: int) -> bool:
@@ -25,8 +31,89 @@ def is_vote(emoji: PartialReactionEmoji, channel_id: int) -> bool:
     return channel_id in [config.council_queue, config.approval_queue]
 
 
+class Suggestion:
+    """A suggestion in a queue."""
+
+    #: The asyncpg pool.
+    db = None
+
+    class NotFound(Exception):
+        """An exception thrown when a suggestion was not found."""
+
+    class VoteType(enum.Enum):
+        """Signifies whether a vote will go against or for a suggestion."""
+        YAY = enum.auto()
+        NAY = enum.auto()
+
+        @property
+        def operator(self):
+            return '+' if self is self.YAY else '-'
+
+    def __init__(self, record):
+        self.record = record
+
+    def __repr__(self):
+        return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>'.format(self.record)
+
+    async def process_vote(self, vote_emoji: PartialReactionEmoji, vote_type: VoteType, message_id: int):
+        """Processes a vote for this suggestion."""
+
+        log.debug(
+            'Processsing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d)',
+            self, vote_emoji, vote_type.operator, message_id
+        )
+
+        # Calculate the column to modify depending on which emoji was reacted with.
+        vote_target = 'upvotes' if vote_emoji == config.approve_emoji_id else 'downvotes'
+
+        await self.db.execute(
+            f"""
+            update suggestions
+            set {vote_target} = {vote_target} {vote_type.operator} 1
+            where idx = $1
+            """,
+            self.record['idx']
+        )
+        await self.update_inplace()
+
+    async def update_inplace(self):
+        """Updates the internal state of this Suggestion from Postgres."""
+        self.record = await self.db.fetchrow(
+            'select * from suggestions where idx = $1',
+            self.record['idx']
+        )
+        log.debug('Updated suggestion inplace. %s', self)
+
+    @classmethod
+    async def get_from_message(cls, message_id: int) -> 'Suggestion':
+        """
+        Returns a Suggestion instance by message ID.
+
+        This works for messages in the council queue, or public queue.
+        """
+
+        record = await cls.db.fetchrow(
+            f"""
+            select * from suggestions
+            where council_message_id = $1 or public_message_id = $1
+            """,
+            message_id
+        )
+
+        if not record:
+            raise cls.NotFound('Suggestion not found.')
+
+        return cls(record)
+
+
 class BlobQueue(Cog):
     """Processing blob suggestions on the Blob Emoji server."""
+
+    def __init__(self, bot):
+        super().__init__(bot)
+
+        Suggestion.db = bot.db
+        self.voting_lock = asyncio.Lock()
 
     async def on_message(self, message: Message):
         if message.channel.id != config.suggestions_channel:
@@ -112,20 +199,27 @@ class BlobQueue(Cog):
             'You\'ll receive another direct message with updates once it has been voted on!'
         )
 
-    # todo: add / remove votes
-    # todo: move blobs from council queue -> public queue
+    # todo: move blobs from council queue -> public queue, delete from buffer guild
     # note: on move votes have the be reset (or change the schema - don't really mind)
     async def on_raw_reaction_add(self, emoji: PartialReactionEmoji, message_id: int, channel_id: int, user_id: int):
-        if not is_vote(emoji, channel_id):
+        if not is_vote(emoji, channel_id) or user_id == self.bot.user.id:
             return
 
-        pass  # add to votes
+        log.debug('Received reaction.')
+
+        async with self.voting_lock:
+            s = await Suggestion.get_from_message(message_id)
+            await s.process_vote(emoji, Suggestion.VoteType.YAY, message_id)
 
     async def on_raw_reaction_remove(self, emoji: PartialReactionEmoji, message_id: int, channel_id: int, user_id: int):
-        if not is_vote(emoji, channel_id):
+        if not is_vote(emoji, channel_id) or user_id == self.bot.user.id:
             return
 
-        pass  # remove from votes
+        log.debug('Received reaction.')
+
+        async with self.voting_lock:
+            s = await Suggestion.get_from_message(message_id)
+            await s.process_vote(emoji, Suggestion.VoteType.NAY, message_id)
 
     async def get_buffer_guild(self) -> Guild:
         """
@@ -147,3 +241,14 @@ class BlobQueue(Cog):
             return guild
 
         return await self.bot.create_guild('BlobQueue Emoji Buffer')
+
+    @command()
+    @is_bot_admin()
+    async def buffer_info(self, ctx):
+        """Shows information about buffer guilds."""
+        try:
+            guild = await self.get_buffer_guild()
+        except HTTPException:
+            await ctx.send('**Error!** No available buffer guild.')
+
+        await ctx.send(f'Current buffer guild: {guild.name} ({len(guild.emojis)}/50 full)')
