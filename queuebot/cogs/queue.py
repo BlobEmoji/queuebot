@@ -2,8 +2,8 @@
 import io
 import re
 
-from discord import File, Guild, HTTPException, Message, PartialReactionEmoji, utils
-from discord.ext.commands import Context, command
+import discord
+from discord.ext import commands
 
 import config
 from queuebot.cog import Cog
@@ -14,7 +14,7 @@ from queuebot.utils.formatting import name_id
 NAME_RE = re.compile(r'(\w{1,32}):?\d?')
 
 
-def is_vote(emoji: PartialReactionEmoji, channel_id: int) -> bool:
+def is_vote(emoji: discord.PartialReactionEmoji, channel_id: int) -> bool:
     """Checks whether an emoji is the approve or deny emoji and a channel is a suggestion processing channel."""
     if emoji.id is None:
         return False  # not a custom emoji
@@ -28,7 +28,7 @@ def is_vote(emoji: PartialReactionEmoji, channel_id: int) -> bool:
 class BlobQueue(Cog):
     """Processing blob suggestions on the Blob Emoji server."""
 
-    async def on_message(self, message: Message):
+    async def on_message(self, message: discord.Message):
         if message.channel.id != config.suggestions_channel:
             return
 
@@ -52,7 +52,7 @@ class BlobQueue(Cog):
 
         try:
             guild = await self.get_buffer_guild()
-        except HTTPException:
+        except discord.HTTPException:
             await message.delete()
 
             log = self.bot.get_channel(config.bot_log)
@@ -79,7 +79,7 @@ class BlobQueue(Cog):
         log = self.bot.get_channel(config.suggestions_log)
         await log.send(
             f'{name} by {name_id(message.author)} filename: {attachment.filename}'.replace('@', '@\u200b'),
-            file=File(buffer, filename=attachment.filename)
+            file=discord.File(buffer, filename=attachment.filename)
         )
 
         queue = self.bot.get_channel(config.council_queue)
@@ -90,13 +90,13 @@ class BlobQueue(Cog):
 
         await self.db.execute(
             """
-            insert into suggestions (
+            INSERT INTO suggestions (
                 user_id,
                 council_message_id,
                 emoji_id,
                 emoji_name
             )
-            values (
+            VALUES (
                 $1, $2, $3, $4
             )
             """,
@@ -108,26 +108,28 @@ class BlobQueue(Cog):
 
         await message.delete()
         await message.author.send(
-            'Your suggestion has been accepted and will now be voted on by the Blob Council!'
+            'Your suggestion has been accepted and will now be voted on by the Blob Council!\n'
             'You\'ll receive another direct message with updates once it has been voted on!'
         )
 
     # todo: add / remove votes
     # todo: move blobs from council queue -> public queue
     # note: on move votes have the be reset (or change the schema - don't really mind)
-    async def on_raw_reaction_add(self, emoji: PartialReactionEmoji, message_id: int, channel_id: int, user_id: int):
+    async def on_raw_reaction_add(self, emoji: discord.PartialReactionEmoji, message_id: int,
+                                  channel_id: int, user_id: int):
         if not is_vote(emoji, channel_id):
             return
 
         pass  # add to votes
 
-    async def on_raw_reaction_remove(self, emoji: PartialReactionEmoji, message_id: int, channel_id: int, user_id: int):
+    async def on_raw_reaction_remove(self, emoji: discord.PartialReactionEmoji, message_id: int,
+                                     channel_id: int, user_id: int):
         if not is_vote(emoji, channel_id):
             return
 
         pass  # remove from votes
 
-    async def get_buffer_guild(self) -> Guild:
+    async def get_buffer_guild(self) -> discord.Guild:
         """
         Get a guild the bot can upload a temporary emoji to.
 
@@ -139,10 +141,10 @@ class BlobQueue(Cog):
         HTTPException
             The bot is in more than 10 guilds total while creating a new guild.
         """
-        def has_emoji_slots(guild: Guild) -> bool:
+        def has_emoji_slots(guild: discord.Guild) -> bool:
             return guild.me.guild_permissions.manage_emojis and len(guild.emojis) < 50
 
-        guild = utils.find(has_emoji_slots, self.bot.guilds)
+        guild = discord.utils.find(has_emoji_slots, self.bot.guilds)
         if guild is not None:
             return guild
 

@@ -26,10 +26,10 @@ class Errors(Cog):
             # Log the error.
             error = exception.original
             trace = ''.join(traceback.format_exception(type(error), error, error.__traceback__, limit=15))
-            logger.fatal('Bot error: %s', trace)
+            logger.error('Bot error: %s', trace)
 
             try:
-                await ctx.send("Sorry, a fatal error has occurred.")
+                await ctx.send("Sorry, an error has occurred.")
             except HTTPException:
                 pass
         elif isinstance(exception, commands.UserInputError):

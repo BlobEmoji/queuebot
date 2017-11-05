@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List
 
 from asyncpg.pool import create_pool, Pool
-from discord import Message, User
+import discord
 from discord.ext import commands
 
 import config
@@ -22,7 +22,7 @@ class Queuebot(commands.Bot):
         self.remove_command('help')
 
         #: OAuth2 application owner.
-        self.owner: User = None
+        self.owner: discord.User = None
 
         #: List of extension names to load. We store this because `self.extensions` is volatile during reload.
         self.to_load: List[str] = None
@@ -45,7 +45,7 @@ class Queuebot(commands.Bot):
     def council_roles(self):
         return set(getattr(config, 'council_roles', []))
 
-    async def on_message(self, msg: Message):
+    async def on_message(self, msg: discord.Message):
         # Ignore messages from bots.
         if msg.author.bot:
             return
