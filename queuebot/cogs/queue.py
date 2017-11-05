@@ -55,7 +55,7 @@ class Suggestion:
     def __repr__(self):
         return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>'.format(self.record)
 
-    async def process_vote(self, vote_emoji: PartialReactionEmoji, vote_type: VoteType, message_id: int):
+    async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
         """Processes a vote for this suggestion."""
 
         log.debug(
@@ -245,13 +245,13 @@ class BlobQueue(Cog):
 
         return await self.bot.create_guild('BlobQueue Emoji Buffer')
 
-    @command()
+    @commands.command()
     @is_bot_admin()
     async def buffer_info(self, ctx):
         """Shows information about buffer guilds."""
         try:
             guild = await self.get_buffer_guild()
-        except HTTPException:
+        except discord.HTTPException:
             await ctx.send('**Error!** No available buffer guild.')
 
         await ctx.send(f'Current buffer guild: {guild.name} ({len(guild.emojis)}/50 full)')
