@@ -27,7 +27,10 @@ class Utilities(Cog):
         regular_commands = [c for c in ctx.bot.commands if not isinstance(c, Group)]
         groups = [c for c in ctx.bot.commands if isinstance(c, Group)]
 
-        format_cmd = lambda c: f'`{ctx.prefix}{c.signature}`: {c.help}'
+        def format_cmd(cmd):
+            checks = [check.__qualname__ for check in cmd.checks]
+            admin = ' Usable by bot admins only.' if any('is_bot_admin' in check for check in checks) else ''
+            return f'`{ctx.prefix}{cmd.signature}`: {cmd.help}' + admin
 
         for cmd in regular_commands:
             paginator.add_line(format_cmd(cmd))
