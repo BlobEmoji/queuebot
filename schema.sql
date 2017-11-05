@@ -1,5 +1,5 @@
 create table if not exists suggestions (
-    -- emoji id
+    -- suggestion id
     idx serial primary key,
 
     -- user that submitted the emoji
