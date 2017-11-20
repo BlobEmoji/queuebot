@@ -38,7 +38,7 @@ class Suggestion:
     #: The asyncpg pool.
     db = None
 
-    # the discord bot
+    #: The Discord bot instance.
     bot = None
 
     class NotFound(Exception):
