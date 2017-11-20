@@ -123,11 +123,11 @@ class Suggestion:
             await changelog.send(
                 f'<:{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
             )
-            await emoji.delete()
 
             msg = await queue.send(emoji)
             await msg.add_reaction(config.approve_emoji)
             await msg.add_reaction(config.deny_emoji)
+            await emoji.delete()
 
             if user:
                 await user.send(SUGGESTION_APPROVED)
