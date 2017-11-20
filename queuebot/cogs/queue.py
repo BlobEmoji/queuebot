@@ -73,9 +73,9 @@ class Suggestion:
 
         await self.db.execute(
             f"""
-            update suggestions
-            set {vote_target} = {vote_target} {vote_type.operator} 1
-            where idx = $1
+            UPDATE suggestions
+            SET {vote_target} = {vote_target} {vote_type.operator} 1
+            WHERE idx = $1
             """,
             self.record['idx']
         )
@@ -145,8 +145,8 @@ class Suggestion:
 
         record = await cls.db.fetchrow(
             """
-            select * from suggestions
-            where council_message_id = $1 or public_message_id = $1
+            SELECT * FROM suggestions
+            WHERE council_message_id = $1 OR public_message_id = $1
             """,
             message_id
         )
