@@ -12,6 +12,7 @@ import config
 from queuebot.checks import is_bot_admin
 from queuebot.cog import Cog
 from queuebot.utils.formatting import name_id
+from queuebot.utils.messages import *
 
 
 # matches the full string or the name of a custom emoji (since replacements for those might be posted)
@@ -36,6 +37,9 @@ class Suggestion:
 
     #: The asyncpg pool.
     db = None
+
+    # the discord bot
+    bot = None
 
     class NotFound(Exception):
         """An exception thrown when a suggestion was not found."""
@@ -77,6 +81,52 @@ class Suggestion:
         )
         await self.update_inplace()
 
+        if self.record['public_message_id'] is not None:
+            return  # we don't process public votes automatically yet
+
+        await self.check_council_votes()
+
+    async def check_council_votes(self):
+        upvotes = self.record['upvotes']
+        downvotes = self.record['downvotes']
+
+        # copied these numbers / if statement logic from b1nb0t
+        if upvotes >= 10 and upvotes - downvotes >= 5 and upvotes + downvotes >= 15:
+            await self.db.execute(
+                'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.record['idx']
+            )
+            await self.update_inplace()
+
+            user_id = self.record['user_id']
+            user = self.bot.get_user(user_id)
+            emoji = self.bot.get_emoji(self.record['emoji_id'])
+
+            changelog = self.bot.get_channel(config.changelog)
+            queue = self.bot.get_channel(config.approval_queue)
+
+            await changelog.send(
+                f'<{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
+            )
+            await emoji.delete()
+
+            msg = await queue.send(emoji)
+            await msg.add_reaction(config.approve_emoji)
+            await msg.add_reaction(config.deny_emoji)
+
+            await user.send(SUGGESTION_APPROVED)
+
+        elif downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15:
+            user_id = self.record['user_id']
+            user = self.bot.get_user(user_id)
+            emoji = self.bot.get_emoji(self.record['emoji_id'])
+
+            changelog = self.bot.get_channel(config.changelog)
+
+            await changelog.send(f'<{config.deny_emoji}> denied: {emoji}')
+            await emoji.delete()
+
+            await user.send(SUGGESTION_DENIED)
+
     async def update_inplace(self):
         """Updates the internal state of this Suggestion from Postgres."""
         self.record = await self.db.fetchrow(
@@ -94,7 +144,7 @@ class Suggestion:
         """
 
         record = await cls.db.fetchrow(
-            f"""
+            """
             select * from suggestions
             where council_message_id = $1 or public_message_id = $1
             """,
@@ -114,6 +164,7 @@ class BlobQueue(Cog):
         super().__init__(bot)
 
         Suggestion.db = bot.db
+        Suggestion.bot = bot
         self.voting_lock = asyncio.Lock()
 
     async def on_message(self, message: discord.Message):
@@ -122,17 +173,13 @@ class BlobQueue(Cog):
 
         if not message.attachments:
             await message.delete()
-            return await message.author.send(
-                'Your suggestion didn\'nt have any files attached, please repost the message and attach the suggestion!'
-            )
+            return await message.author.send(BAD_SUGGESTION_MSG)
 
         attachment = message.attachments[0]
 
         if not attachment.filename.endswith(('.png', '.jpg')):
             await message.delete()
-            return await message.author.send(
-                'Your suggestion image must be in png or jpg format, please resubmit it after changing the format!'
-            )
+            return await message.author.send(BAD_SUGGESTION_MSG)
 
         buffer = io.BytesIO()
         await attachment.save(buffer)
@@ -146,9 +193,7 @@ class BlobQueue(Cog):
             log = self.bot.get_channel(config.bot_log)
             await log.send('Couldn\'t process suggestion due to having no free emoji or guild slots!')
 
-            return await message.author.send(
-                'Your suggestion couldn\'nt be processed! The bot owner has been notified, please try again later.'
-            )
+            return await message.author.send(BOT_BROKEN_MSG)
 
         # use the messages content or the filename, removing the .png or .jpg extension
         match = NAME_RE.search(message.content)
@@ -195,13 +240,7 @@ class BlobQueue(Cog):
         )
 
         await message.delete()
-        await message.author.send(
-            'Your suggestion has been accepted and will now be voted on by the Blob Council!\n'
-            'You\'ll receive another direct message with updates once it has been voted on!'
-        )
-
-    # todo: move blobs from council queue -> public queue, delete from buffer guild
-    # note: on move votes have the be reset (or change the schema - don't really mind)
+        await message.author.send(SUGGESTION_RECIEVED)
 
     async def on_raw_reaction_add(self, emoji: discord.PartialReactionEmoji, message_id: int,
                                   channel_id: int, user_id: int):
@@ -238,7 +277,7 @@ class BlobQueue(Cog):
             The bot is in more than 10 guilds total while creating a new guild.
         """
         def has_emoji_slots(guild: discord.Guild) -> bool:
-            return guild.me.guild_permissions.manage_emojis and len(guild.emojis) < 50
+            return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
 
         guild = discord.utils.find(has_emoji_slots, self.bot.guilds)
         if guild is not None:
