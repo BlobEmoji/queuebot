@@ -82,7 +82,8 @@ class Suggestion:
         await self.update_inplace()
 
         if self.record['public_message_id'] is not None:
-            return  # we don't process public votes automatically yet
+            # Don't process public votes. We still keep track of them, though.
+            return
 
         await self.check_council_votes()
 
@@ -90,8 +91,10 @@ class Suggestion:
         upvotes = self.record['upvotes']
         downvotes = self.record['downvotes']
 
-        # copied these numbers / if statement logic from b1nb0t
+        # This logic is copied from b1nb0t.
         if upvotes >= 10 and upvotes - downvotes >= 5 and upvotes + downvotes >= 15:
+            # Since we don't track internal queue/public queue votes separately, we'll have to reset the upvotes
+            # and downvotes columns.
             await self.db.execute(
                 'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.record['idx']
             )
@@ -130,7 +133,7 @@ class Suggestion:
     async def update_inplace(self):
         """Updates the internal state of this Suggestion from Postgres."""
         self.record = await self.db.fetchrow(
-            'select * from suggestions where idx = $1',
+            'SELECT * FROM suggestions WHERE idx = $1',
             self.record['idx']
         )
         log.debug('Updated suggestion inplace. %s', self)
