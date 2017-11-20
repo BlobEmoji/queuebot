@@ -107,7 +107,7 @@ class Suggestion:
             if not user:
                 await self.bot.log(
                     f"\N{WARNING SIGN} Couldn't find the submitter for submission {self.record['idx']} "
-                    f"(user ID: `{user_id}`), cannot move to the public queue."
+                    f"(user ID: `{user_id}`), proceeding anyways."
                 )
 
             if not emoji:
@@ -139,7 +139,7 @@ class Suggestion:
 
             if not emoji:
                 await self.bot.log(
-                    f"\N{NO ENTRY SIGN} Cannot automiatcally deny submission {self.record['idx']}, the uploaded "
+                    f"\N{NO ENTRY SIGN} Cannot automatically deny submission {self.record['idx']}, the uploaded "
                     "emoji was not found."
                 )
                 return
@@ -147,7 +147,7 @@ class Suggestion:
             if not user:
                 await self.bot.log(
                     f"\N{WARNING SIGN} Automatic deny: Cannot find submitter for submission {self.record['idx']} "
-                    "(user ID: `{user_id}`), the user wasn't found."
+                    "(user ID: `{user_id}`), the user wasn't found. Proceeding anyway."
                 )
 
             changelog = self.bot.get_channel(config.changelog)
