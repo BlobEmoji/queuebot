@@ -117,7 +117,7 @@ class Suggestion:
                 )
                 return
 
-            changelog = self.bot.get_channel(config.changelog)
+            changelog = self.bot.get_channel(config.council_changelog)
             queue = self.bot.get_channel(config.approval_queue)
 
             await changelog.send(
