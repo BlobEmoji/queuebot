@@ -53,7 +53,8 @@ class Suggestion:
         self.record = record
 
     def __repr__(self):
-        return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>'.format(self.record)
+        return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>'\
+            .format(self.record)
 
     async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
         """Processes a vote for this suggestion."""
