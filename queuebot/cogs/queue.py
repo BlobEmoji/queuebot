@@ -121,7 +121,7 @@ class Suggestion:
             queue = self.bot.get_channel(config.approval_queue)
 
             await changelog.send(
-                f'<{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
+                f'<:{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
             )
             await emoji.delete()
 
@@ -152,7 +152,7 @@ class Suggestion:
 
             changelog = self.bot.get_channel(config.changelog)
 
-            await changelog.send(f'<{config.deny_emoji}> denied: {emoji}')
+            await changelog.send(f'<:{config.deny_emoji}> denied: {emoji} (by <@{user_id}>)')
             await emoji.delete()
 
             if user:
