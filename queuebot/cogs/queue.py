@@ -91,6 +91,13 @@ class Suggestion:
         upvotes = self.record['upvotes']
         downvotes = self.record['downvotes']
 
+        async def delete_from_council_queue():
+            council_queue = self.bot.get_channel(config.council_queue)
+
+            # Delete the message in the council queue (cleanup).
+            council_message = await council_queue.get_message(self.record['council_message_id'])
+            await council_message.delete()
+
         # This logic is copied from b1nb0t.
         if upvotes >= 10 and upvotes - downvotes >= 5 and upvotes + downvotes >= 15:
             # Since we don't track internal queue/public queue votes separately, we'll have to reset the upvotes
@@ -124,14 +131,17 @@ class Suggestion:
                 f'<:{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
             )
 
+            # Send it to the public queue, and add the ticks.
             msg = await queue.send(emoji)
             await msg.add_reaction(config.approve_emoji)
             await msg.add_reaction(config.deny_emoji)
+
+            # Delete the emoji.
             await emoji.delete()
+            await delete_from_council_queue()
 
             if user:
                 await user.send(SUGGESTION_APPROVED)
-
         elif downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15:
             user_id = self.record['user_id']
             user = self.bot.get_user(user_id)
@@ -154,6 +164,7 @@ class Suggestion:
 
             await changelog.send(f'<:{config.deny_emoji}> denied: {emoji} (by <@{user_id}>)')
             await emoji.delete()
+            await delete_from_council_queue()
 
             if user:
                 await user.send(SUGGESTION_DENIED)
