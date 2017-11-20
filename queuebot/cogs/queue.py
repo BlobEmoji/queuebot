@@ -138,10 +138,11 @@ class Suggestion:
             emoji = self.bot.get_emoji(self.record['emoji_id'])
 
             if not emoji:
-                return await self.bot.log(
+                await self.bot.log(
                     f"\N{NO ENTRY SIGN} Cannot automiatcally deny submission {self.record['idx']}, the uploaded "
                     "emoji was not found."
                 )
+                return
 
             if not user:
                 await self.bot.log(
