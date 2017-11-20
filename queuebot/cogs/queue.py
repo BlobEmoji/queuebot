@@ -104,6 +104,19 @@ class Suggestion:
             user = self.bot.get_user(user_id)
             emoji = self.bot.get_emoji(self.record['emoji_id'])
 
+            if not user:
+                await self.bot.log(
+                    f"\N{WARNING SIGN} Couldn't find the submitter for submission {self.record['idx']} "
+                    f"(user ID: `{user_id}`), cannot move to the public queue."
+                )
+
+            if not emoji:
+                await self.bot.log(
+                    f"\N{NO ENTRY SIGN} Unable to find uploaded for submission {self.record['idx']}, cannot move "
+                    "to the public queue."
+                )
+                return
+
             changelog = self.bot.get_channel(config.changelog)
             queue = self.bot.get_channel(config.approval_queue)
 
@@ -116,19 +129,33 @@ class Suggestion:
             await msg.add_reaction(config.approve_emoji)
             await msg.add_reaction(config.deny_emoji)
 
-            await user.send(SUGGESTION_APPROVED)
+            if user:
+                await user.send(SUGGESTION_APPROVED)
 
         elif downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15:
             user_id = self.record['user_id']
             user = self.bot.get_user(user_id)
             emoji = self.bot.get_emoji(self.record['emoji_id'])
 
+            if not emoji:
+                return await self.bot.log(
+                    f"\N{NO ENTRY SIGN} Cannot automiatcally deny submission {self.record['idx']}, the uploaded "
+                    "emoji was not found."
+                )
+
+            if not user:
+                await self.bot.log(
+                    f"\N{WARNING SIGN} Automatic deny: Cannot find submitter for submission {self.record['idx']} "
+                    "(user ID: `{user_id}`), the user wasn't found."
+                )
+
             changelog = self.bot.get_channel(config.changelog)
 
             await changelog.send(f'<{config.deny_emoji}> denied: {emoji}')
             await emoji.delete()
 
-            await user.send(SUGGESTION_DENIED)
+            if user:
+                await user.send(SUGGESTION_DENIED)
 
     async def update_inplace(self):
         """Updates the internal state of this Suggestion from Postgres."""

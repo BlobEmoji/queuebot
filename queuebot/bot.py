@@ -36,6 +36,12 @@ class Queuebot(commands.Bot):
 
         logger.info('Ready! Logged in as %s (%d)', self.user, self.user.id)
 
+    async def log(self, *args, **kwargs) -> typing.Union[discord.Message, None]:
+        channel = self.get_channel(config.bot_log)
+        if not channel:
+            return None
+        return await channel.send(*args, **kwargs)
+
     @property
     def admins(self):
         return set([self.owner.id] + getattr(config, 'admins', []))
