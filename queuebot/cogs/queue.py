@@ -437,6 +437,7 @@ class BlobQueue(Cog):
             await suggestion.move_to_public_queue()
         except Suggestion.OperationError as err:
             await ctx.send(err)
+        await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
 
     @commands.command()
     @is_police()
