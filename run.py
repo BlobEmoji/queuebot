@@ -34,6 +34,7 @@ async def main():
         try:
             db = await asyncpg.create_pool(**config.pg_credentials)
         except Exception:
+            logging.getLogger('run').exception('Cannot connect to Postgres, stalling:')
             await asyncio.sleep(2)
         else:
             break
