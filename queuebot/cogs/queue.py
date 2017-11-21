@@ -84,8 +84,14 @@ class Suggestion:
 
     @property
     def status(self):
-        status = 'In the public approval queue' if self.is_in_public_queue else 'In the private council queue'
-        return f"""Suggestion #{self.record['idx']}
+        if self.is_denied:
+            status = 'Denied'
+        elif self.is_in_public_queue:
+            status = 'In the public approval queue'
+        else:
+            status = 'In the private council queue'
+
+        return f"""**Suggestion #{self.record['idx']}**
 
 Submitted by <@{self.record['user_id']}>
 Upvotes: **{self.record['upvotes']}** / Downvotes: **{self.record['downvotes']}**
