@@ -9,9 +9,9 @@ import discord
 from discord.ext import commands
 
 import config
-from queuebot.checks import is_bot_admin
+from queuebot.checks import is_bot_admin, is_council, is_police
 from queuebot.cog import Cog
-from queuebot.utils.formatting import name_id
+from queuebot.utils.formatting import name_id, Table
 from queuebot.utils.messages import *
 
 
@@ -30,6 +30,17 @@ def is_vote(emoji: discord.PartialReactionEmoji, channel_id: int) -> bool:
         return False
 
     return channel_id in [config.council_queue, config.approval_queue]
+
+
+class SuggestionConverter(commands.Converter):
+    async def convert(self, ctx: commands.Context, argument: str):
+        try:
+            sugg_id = int(argument)
+            return await Suggestion.get_from_id(sugg_id)
+        except ValueError:
+            raise commands.BadArgument('Invalid ID.')
+        except Suggestion.NotFound:
+            raise commands.BadArgument('Suggestion not found.')
 
 
 class Suggestion:
@@ -53,6 +64,9 @@ class Suggestion:
         def operator(self):
             return '+' if self is self.YAY else '-'
 
+    class OperationError(Exception):
+        pass
+
     def __init__(self, record):
         self.record = record
 
@@ -60,9 +74,25 @@ class Suggestion:
         return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>'\
             .format(self.record)
 
+    @property
+    def is_in_public_queue(self):
+        return self.record['public_message_id'] is not None
+
+    @property
+    def is_denied(self):
+        return self.record['public_message_id'] is None and self.record['council_message_id'] is None
+
+    @property
+    def status(self):
+        status = 'In the public approval queue' if self.is_in_public_queue else 'In the private council queue'
+        return f"""Suggestion #{self.record['idx']}
+
+Submitted by <@{self.record['user_id']}>
+Upvotes: **{self.record['upvotes']}** / Downvotes: **{self.record['downvotes']}**
+Status: {status}"""
+
     async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
         """Processes a vote for this suggestion."""
-
         log.debug(
             'Processsing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d)',
             self, vote_emoji, vote_type.operator, message_id
@@ -87,16 +117,116 @@ class Suggestion:
 
         await self.check_council_votes()
 
+    async def delete_from_council_queue(self):
+        """Deletes the voting message for this suggestion from the council queue."""
+        log.debug('Removing %s from council queue.', self)
+        council_queue = self.bot.get_channel(config.council_queue)
+
+        # Delete the message in the council queue (cleanup).
+        council_message = await council_queue.get_message(self.record['council_message_id'])
+        await council_message.delete()
+
+        # Set this suggestion's council queue message ID to null.
+        await self.db.execute("""
+            UPDATE suggestions
+            SET council_message_id = NULL
+            WHERE idx = $1
+        """, self.record['idx'])
+        await self.update_inplace()
+
+    async def move_to_public_queue(self):
+        """Moves this suggestion to the public queue."""
+        if self.is_in_public_queue:
+            raise self.OperationError(
+                "Cannot move this suggestion to the public queue -- it is already in the public queue."
+            )
+
+        log.info('Moving %s to the public queue', self)
+
+        user_id = self.record['user_id']
+        user = self.bot.get_user(user_id)
+        emoji = self.bot.get_emoji(self.record['emoji_id'])
+
+        if not user:
+            await self.bot.log(
+                f"\N{WARNING SIGN} Couldn't find the submitter for suggestion {self.record['idx']} "
+                f"(user ID: `{user_id}`), proceeding anyways."
+            )
+
+        if not emoji:
+            await self.bot.log(
+                f"\N{NO ENTRY SIGN} Unable to find uploaded for suggestion {self.record['idx']}, cannot move "
+                "to the public queue."
+            )
+            return
+
+        changelog = self.bot.get_channel(config.council_changelog)
+        queue = self.bot.get_channel(config.approval_queue)
+
+        await changelog.send(
+            f'<:{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
+        )
+
+        # Send it to the public queue, and add the ticks.
+        msg = await queue.send(emoji)
+        await msg.add_reaction(config.approve_emoji)
+        await msg.add_reaction(config.deny_emoji)
+
+        # Delete the emoji, and remove the voting message from the council queue.
+        await emoji.delete()
+        await self.delete_from_council_queue()
+
+        # Set the public message id.
+        log.info('Setting public_messsage_id -> %d', msg.id)
+        await self.db.execute(
+            """
+            UPDATE suggestions
+            SET public_message_id = $1
+            WHERE idx = $2
+            """,
+            msg.id, self.record['idx']
+        )
+        await self.update_inplace()
+
+        if user:
+            await user.send(SUGGESTION_APPROVED)
+
+    async def deny(self):
+        """Denies this emoji."""
+        if self.is_in_public_queue:
+            raise self.OperationError(
+                "Cannot deny this suggestion -- it is already in the public queue."
+            )
+
+        user_id = self.record['user_id']
+        user = self.bot.get_user(user_id)
+        emoji = self.bot.get_emoji(self.record['emoji_id'])
+
+        if not emoji:
+            await self.bot.log(
+                f"\N{NO ENTRY SIGN} Cannot automatically deny suggestion {self.record['idx']}, the uploaded "
+                "emoji was not found."
+            )
+            return
+
+        if not user:
+            await self.bot.log(
+                f"\N{WARNING SIGN} Automatic deny: Cannot find submitter for suggestion {self.record['idx']} "
+                "(user ID: `{user_id}`), the user wasn't found. Proceeding anyway."
+            )
+
+        changelog = self.bot.get_channel(config.council_changelog)
+
+        await changelog.send(f'<:{config.deny_emoji}> denied: {emoji} (by <@{user_id}>)')
+        await emoji.delete()
+        await self.delete_from_council_queue()
+
+        if user:
+            await user.send(SUGGESTION_DENIED)
+
     async def check_council_votes(self):
         upvotes = self.record['upvotes']
         downvotes = self.record['downvotes']
-
-        async def delete_from_council_queue():
-            council_queue = self.bot.get_channel(config.council_queue)
-
-            # Delete the message in the council queue (cleanup).
-            council_message = await council_queue.get_message(self.record['council_message_id'])
-            await council_message.delete()
 
         # This logic is copied from b1nb0t.
         if upvotes >= 10 and upvotes - downvotes >= 5 and upvotes + downvotes >= 15:
@@ -106,68 +236,9 @@ class Suggestion:
                 'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.record['idx']
             )
             await self.update_inplace()
-
-            user_id = self.record['user_id']
-            user = self.bot.get_user(user_id)
-            emoji = self.bot.get_emoji(self.record['emoji_id'])
-
-            if not user:
-                await self.bot.log(
-                    f"\N{WARNING SIGN} Couldn't find the submitter for submission {self.record['idx']} "
-                    f"(user ID: `{user_id}`), proceeding anyways."
-                )
-
-            if not emoji:
-                await self.bot.log(
-                    f"\N{NO ENTRY SIGN} Unable to find uploaded for submission {self.record['idx']}, cannot move "
-                    "to the public queue."
-                )
-                return
-
-            changelog = self.bot.get_channel(config.council_changelog)
-            queue = self.bot.get_channel(config.approval_queue)
-
-            await changelog.send(
-                f'<:{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
-            )
-
-            # Send it to the public queue, and add the ticks.
-            msg = await queue.send(emoji)
-            await msg.add_reaction(config.approve_emoji)
-            await msg.add_reaction(config.deny_emoji)
-
-            # Delete the emoji.
-            await emoji.delete()
-            await delete_from_council_queue()
-
-            if user:
-                await user.send(SUGGESTION_APPROVED)
+            await self.move_to_public_queue()
         elif downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15:
-            user_id = self.record['user_id']
-            user = self.bot.get_user(user_id)
-            emoji = self.bot.get_emoji(self.record['emoji_id'])
-
-            if not emoji:
-                await self.bot.log(
-                    f"\N{NO ENTRY SIGN} Cannot automatically deny submission {self.record['idx']}, the uploaded "
-                    "emoji was not found."
-                )
-                return
-
-            if not user:
-                await self.bot.log(
-                    f"\N{WARNING SIGN} Automatic deny: Cannot find submitter for submission {self.record['idx']} "
-                    "(user ID: `{user_id}`), the user wasn't found. Proceeding anyway."
-                )
-
-            changelog = self.bot.get_channel(config.changelog)
-
-            await changelog.send(f'<:{config.deny_emoji}> denied: {emoji} (by <@{user_id}>)')
-            await emoji.delete()
-            await delete_from_council_queue()
-
-            if user:
-                await user.send(SUGGESTION_DENIED)
+            await self.deny()
 
     async def update_inplace(self):
         """Updates the internal state of this Suggestion from Postgres."""
@@ -176,6 +247,25 @@ class Suggestion:
             self.record['idx']
         )
         log.debug('Updated suggestion inplace. %s', self)
+
+    @classmethod
+    async def get_from_id(cls, suggestion_id: int) -> 'Suggestion':
+        """
+        Returns a Suggestion instance by ID.
+        """
+
+        record = await cls.db.fetchrow(
+            """
+            SELECT * FROM suggestions
+            WHERE idx = $1
+            """,
+            suggestion_id
+        )
+
+        if not record:
+            raise cls.NotFound('Suggestion not found.')
+
+        return cls(record)
 
     @classmethod
     async def get_from_message(cls, message_id: int) -> 'Suggestion':
@@ -286,7 +376,7 @@ class BlobQueue(Cog):
 
     async def on_raw_reaction_add(self, emoji: discord.PartialReactionEmoji, message_id: int,
                                   channel_id: int, user_id: int):
-        if not is_vote(emoji, channel_id):
+        if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
             return
 
         log.debug('Received reaction add.')
@@ -297,7 +387,7 @@ class BlobQueue(Cog):
 
     async def on_raw_reaction_remove(self, emoji: discord.PartialReactionEmoji, message_id: int,
                                      channel_id: int, user_id: int):
-        if not is_vote(emoji, channel_id):
+        if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
             return
 
         log.debug('Received reaction remove.')
@@ -337,3 +427,58 @@ class BlobQueue(Cog):
             await ctx.send('**Error!** No available buffer guild.')
 
         await ctx.send(f'Current buffer guild: {guild.name} ({len(guild.emojis)}/50 full)')
+
+    @commands.command()
+    @is_police()
+    async def move_to_public_queue(self, ctx, suggestion: SuggestionConverter):
+        """Moves a suggestion to the public queue."""
+        log.info('Cmd: moving %s to public queue', suggestion)
+        try:
+            await suggestion.move_to_public_queue()
+        except Suggestion.OperationError as err:
+            await ctx.send(err)
+
+    @commands.command()
+    @is_police()
+    async def deny(self, ctx, suggestion: SuggestionConverter):
+        """Denies an emoji that is currently in the council queue."""
+        log.info('Cmd: denying %s', suggestion)
+        if suggestion.is_denied:
+            return await ctx.send("That suggestion has already been denied.")
+        try:
+            await suggestion.deny()
+        except Suggestion.OperationError as err:
+            await ctx.send(err)
+        await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
+
+    @commands.command(aliases=['sg'])
+    @is_council()
+    async def suggestions(self, ctx):
+        """Views recent suggestions."""
+        suggestions = [Suggestion(record) for record in await self.db.fetch("""
+            SELECT * FROM suggestions
+            ORDER BY idx DESC
+            LIMIT 10
+        """)]
+
+        table = Table('#', 'Name', 'Submitted By', 'Points', 'Status')
+        for s in suggestions:
+            user = ctx.bot.get_user(s.record['user_id'])
+            submitted_by = f'{user} {user.id}' if user else str(s.record['user_id'])
+
+            if s.is_denied:
+                status = 'Denied'
+            elif s.is_in_public_queue:
+                status = 'PQ'
+            else:
+                status = 'CQ'
+
+            table.add_row(
+                str(s.record['idx']), ':' + s.record['emoji_name'] + ':', submitted_by,
+                f'▲ {s.record["upvotes"]} / ▼ {s.record["downvotes"]}',
+                status
+            )
+
+        await ctx.send(
+            '```\n' + await table.render(ctx.bot.loop) + '\n```'
+        )

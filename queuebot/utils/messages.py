@@ -2,8 +2,13 @@
 
 # strings taken from https://github.com/b1naryth1ef
 
-__all__ = ('BOT_BROKEN_MSG', 'BAD_SUGGESTION_MSG', 'SUGGESTION_RECIEVED', 'SUGGESTION_APPROVED', 'SUGGESTION_DENIED')
-
+__all__ = (
+    'BOT_BROKEN_MSG',
+    'BAD_SUGGESTION_MSG',
+    'SUGGESTION_RECIEVED',
+    'SUGGESTION_APPROVED',
+    'SUGGESTION_DENIED'
+)
 
 BAD_SUGGESTION_MSG = (
     'Heya! Looks like you tried to suggest '
@@ -28,7 +33,7 @@ SUGGESTION_APPROVED = (
 
 SUGGESTION_DENIED = (
     'Unfortunately, your emoji suggestion was denied after going '
-    'through internal review. Check out <#298920394751082507> to see\ '
+    'through internal review. Check out <#298920394751082507> to see '
     'which it was. Feel free to keep suggesting more emoji, but please '
     'don\'t submit the same one unless you\'ve modified it significantly!'
 )
