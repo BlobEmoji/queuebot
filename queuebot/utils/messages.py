@@ -7,7 +7,19 @@ __all__ = (
     'BAD_SUGGESTION_MSG',
     'SUGGESTION_RECIEVED',
     'SUGGESTION_APPROVED',
-    'SUGGESTION_DENIED'
+    'SUGGESTION_DENIED',
+    'UPLOADED_EMOJI_NOT_FOUND',
+    'SUBMITTER_NOT_FOUND'
+)
+
+UPLOADED_EMOJI_NOT_FOUND = (
+    "\N{WARNING SIGN} Cannot {action}, the uploaded emoji associated with this suggestion wasn't found. "
+    "(Suggestion ID: {suggestion[idx]})"
+)
+
+SUBMITTER_NOT_FOUND = (
+    "\N{WARNING SIGN} Warning during {action}: the user associated with this suggestion wasn't found. "
+    "Proceeding anyways. (Suggestion ID: {suggestion[idx]}, user ID: {suggestion[user_id]})"
 )
 
 BAD_SUGGESTION_MSG = (

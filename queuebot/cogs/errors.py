@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 
 from queuebot.cog import Cog
+from queuebot.cogs.queue import Suggestion
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,9 @@ class Errors(Cog):
             return
 
         if isinstance(exception, commands.CommandInvokeError):
+            if isinstance(exception.original, Suggestion.OperationError):
+                return await ctx.send(f'Operation error: {exception.original}')
+
             # Log the error.
             logger.error('Bot error: %s', get_trace(exception.original))
 

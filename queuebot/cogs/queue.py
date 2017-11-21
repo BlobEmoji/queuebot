@@ -141,23 +141,17 @@ Status: {status}"""
                 "Cannot move this suggestion to the public queue -- it is already in the public queue."
             )
 
-        log.info('Moving %s to the public queue', self)
+        log.info('Moving %s to the public queue.', self)
 
         user_id = self.record['user_id']
         user = self.bot.get_user(user_id)
         emoji = self.bot.get_emoji(self.record['emoji_id'])
 
         if not user:
-            await self.bot.log(
-                f"\N{WARNING SIGN} Couldn't find the submitter for suggestion {self.record['idx']} "
-                f"(user ID: `{user_id}`), proceeding anyways."
-            )
+            await self.bot.log(SUBMITTER_NOT_FOUND.format(action='move to PQ', suggestion=self.record))
 
         if not emoji:
-            await self.bot.log(
-                f"\N{NO ENTRY SIGN} Unable to find uploaded for suggestion {self.record['idx']}, cannot move "
-                "to the public queue."
-            )
+            await self.bot.log(UPLOADED_EMOJI_NOT_FOUND.format(action='move to PQ', suggestion=self.record))
             return
 
         changelog = self.bot.get_channel(config.council_changelog)
@@ -193,27 +187,22 @@ Status: {status}"""
 
     async def deny(self):
         """Denies this emoji."""
+        # Sane checks for command usage.
         if self.is_in_public_queue:
-            raise self.OperationError(
-                "Cannot deny this suggestion -- it is already in the public queue."
-            )
+            raise self.OperationError("Can't deny this suggestion -- it's already in the public queue.")
+        if self.is_denied:
+            raise self.OperationError("Can't deny this suggestion -- it has already been denied.")
 
         user_id = self.record['user_id']
         user = self.bot.get_user(user_id)
         emoji = self.bot.get_emoji(self.record['emoji_id'])
 
         if not emoji:
-            await self.bot.log(
-                f"\N{NO ENTRY SIGN} Cannot automatically deny suggestion {self.record['idx']}, the uploaded "
-                "emoji was not found."
-            )
-            return
+            await self.bot.log(UPLOADED_EMOJI_NOT_FOUND.format(action='deny', suggestion=self.record))
+            raise self.OperationError("Error denying -- the uploaded emoji wasn't found.")
 
         if not user:
-            await self.bot.log(
-                f"\N{WARNING SIGN} Automatic deny: Cannot find submitter for suggestion {self.record['idx']} "
-                "(user ID: `{user_id}`), the user wasn't found. Proceeding anyway."
-            )
+            await self.bot.log(SUBMITTER_NOT_FOUND.format(action='deny', suggestion=self.record))
 
         changelog = self.bot.get_channel(config.council_changelog)
 
@@ -250,9 +239,7 @@ Status: {status}"""
 
     @classmethod
     async def get_from_id(cls, suggestion_id: int) -> 'Suggestion':
-        """
-        Returns a Suggestion instance by ID.
-        """
+        """Returns a Suggestion instance by ID."""
 
         record = await cls.db.fetchrow(
             """
@@ -433,10 +420,7 @@ class BlobQueue(Cog):
     async def move_to_public_queue(self, ctx, suggestion: SuggestionConverter):
         """Moves a suggestion to the public queue."""
         log.info('Cmd: moving %s to public queue', suggestion)
-        try:
-            await suggestion.move_to_public_queue()
-        except Suggestion.OperationError as err:
-            await ctx.send(err)
+        await suggestion.move_to_public_queue()
         await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
 
     @commands.command()
@@ -444,12 +428,7 @@ class BlobQueue(Cog):
     async def deny(self, ctx, suggestion: SuggestionConverter):
         """Denies an emoji that is currently in the council queue."""
         log.info('Cmd: denying %s', suggestion)
-        if suggestion.is_denied:
-            return await ctx.send("That suggestion has already been denied.")
-        try:
-            await suggestion.deny()
-        except Suggestion.OperationError as err:
-            await ctx.send(err)
+        await suggestion.deny()
         await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
 
     @commands.command(aliases=['sg'])
