@@ -30,7 +30,14 @@ logging.getLogger().addHandler(stream)   # Log everything to stdout.
 
 
 async def main():
-    db = await asyncpg.create_pool(**config.pg_credentials)
+    while True:
+        try:
+            db = await asyncpg.create_pool(**config.pg_credentials)
+        except Exception:
+            await asyncio.sleep(2)
+        else:
+            break
+
     bot = Queuebot(command_prefix='q!', db=db)
 
     bot.discover_exts('queuebot/cogs')
