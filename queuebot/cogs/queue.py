@@ -445,13 +445,13 @@ class BlobQueue(Cog):
 
     @commands.command(aliases=['sg'])
     @is_council()
-    async def suggestions(self, ctx):
+    async def suggestions(self, ctx, limit: int=10):
         """Views recent suggestions."""
         suggestions = [Suggestion(record) for record in await self.db.fetch("""
             SELECT * FROM suggestions
             ORDER BY idx DESC
-            LIMIT 10
-        """)]
+            LIMIT $1
+        """, limit)]
 
         table = Table('#', 'Name', 'Submitted By', 'Points', 'Status')
         for s in suggestions:
@@ -471,6 +471,9 @@ class BlobQueue(Cog):
                 status
             )
 
-        await ctx.send(
-            '```\n' + await table.render(ctx.bot.loop) + '\n```'
-        )
+        text = '```\n' + await table.render(ctx.bot.loop) + '\n```'
+
+        if len(text) > 2000:
+            await ctx.send("Result table was too big. Try lowering the limit.")
+        else:
+            await ctx.send(text)
