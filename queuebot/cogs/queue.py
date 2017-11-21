@@ -423,7 +423,7 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_police()
-    async def move_to_public_queue(self, ctx, suggestion: SuggestionConverter):
+    async def approve(self, ctx, suggestion: SuggestionConverter):
         """Moves a suggestion to the public queue."""
         log.info('Cmd: moving %s to public queue', suggestion)
         await suggestion.move_to_public_queue()
