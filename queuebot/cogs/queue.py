@@ -287,6 +287,7 @@ class BlobQueue(Cog):
         self.voting_lock = asyncio.Lock()
 
     async def on_message(self, message: discord.Message):
+        global log  # Can't access the logger from here for some reason.
         if message.channel.id != config.suggestions_channel:
             return
 
@@ -300,8 +301,10 @@ class BlobQueue(Cog):
             await message.delete()
             return await message.author.send(BAD_SUGGESTION_MSG)
 
+        log.info('Saving attachment from %d...', message.id)
         buffer = io.BytesIO()
         await attachment.save(buffer)
+        log.info('Saved.')
         buffer.seek(0)
 
         try:
