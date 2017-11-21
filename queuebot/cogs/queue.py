@@ -440,6 +440,12 @@ class BlobQueue(Cog):
         await suggestion.deny()
         await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
 
+    @commands.command()
+    @is_council()
+    async def status(self, ctx, suggestion: SuggestionConverter):
+        """Views the status of a submission."""
+        return await ctx.send(suggestion.status)
+
     @commands.command(aliases=['sg'])
     @is_council()
     async def suggestions(self, ctx):
