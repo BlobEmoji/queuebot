@@ -1,10 +1,10 @@
 import importlib
 import inspect
 import logging
+import typing
 from pathlib import Path
-from typing import List
 
-from asyncpg.pool import create_pool, Pool
+from asyncpg.pool import Pool
 import discord
 from discord.ext import commands
 
@@ -25,17 +25,22 @@ class Queuebot(commands.Bot):
         self.owner: discord.User = None
 
         #: List of extension names to load. We store this because `self.extensions` is volatile during reload.
-        self.to_load: List[str] = None
+        self.to_load: typing.List[str] = None
 
         # Database connection to PostgreSQL
-        self.db: Pool = None
-        self.loop.create_task(self.pg_connect())
+        self.db: Pool = kwargs.pop('db')
 
     async def on_ready(self):
         # Grab owner from application info.
         self.owner = (await self.application_info()).owner
 
         logger.info('Ready! Logged in as %s (%d)', self.user, self.user.id)
+
+    async def log(self, *args, **kwargs) -> typing.Union[discord.Message, None]:
+        channel = self.get_channel(config.bot_log)
+        if not channel:
+            return None
+        return await channel.send(*args, **kwargs)
 
     @property
     def admins(self):
@@ -54,9 +59,6 @@ class Queuebot(commands.Bot):
         await self.wait_until_ready()
 
         await self.process_commands(msg)
-
-    async def pg_connect(self):
-        self.db = await create_pool(**config.pg_credentials)
 
     def load_extension(self, name: str):
         module = importlib.import_module(name)
