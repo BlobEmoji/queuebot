@@ -463,7 +463,7 @@ class BlobQueue(Cog):
             if s.is_denied:
                 status = 'Denied'
             elif s.is_in_public_queue:
-                status = 'PQ'
+                status = 'AQ'  # The "public queue" is actually called the "approval queue".
             else:
                 status = 'CQ'
 
