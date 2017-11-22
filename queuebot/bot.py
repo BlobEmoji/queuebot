@@ -85,7 +85,7 @@ class Queuebot(commands.Bot):
 
         exts = [
             p.stem for p in Path(directory).resolve().iterdir()
-            if p.is_file() and p.stem not in IGNORE
+            if p.stem not in IGNORE
         ]
 
         logger.info('Loading extensions: %s', exts)
