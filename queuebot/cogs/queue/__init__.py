@@ -207,6 +207,11 @@ class BlobQueue(Cog):
     @is_council()
     async def suggestions(self, ctx, limit: int=10):
         """Views recent suggestions."""
+
+        if limit > 200:
+            await ctx.send(f'{limit} suggestions is a bit much. 200 is the maximum.')
+            return
+
         suggestions = [Suggestion(record) for record in await self.db.fetch("""
             SELECT * FROM suggestions
             ORDER BY idx DESC
@@ -231,9 +236,9 @@ class BlobQueue(Cog):
                 status
             )
 
-        text = '```\n' + await table.render(ctx.bot.loop) + '\n```'
+        paginator = commands.Paginator()
+        for line in (await table.render(ctx.bot.loop)).split('\n'):
+            paginator.add_line(line)
 
-        if len(text) > 2000:
-            await ctx.send("Result table was too big. Try lowering the limit.")
-        else:
-            await ctx.send(text)
+        for page in paginator.pages:
+            await ctx.send(page)
