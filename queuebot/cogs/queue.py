@@ -306,6 +306,7 @@ class BlobQueue(Cog):
             await message.delete()
             return await message.author.send(BAD_SUGGESTION_MSG)
 
+        # Save the emoji image data to an in-memory buffer to upload later, in the logging channel.
         buffer = io.BytesIO()
         await attachment.save(buffer)
         buffer.seek(0)
@@ -332,21 +333,12 @@ class BlobQueue(Cog):
             name=name, image=buffer.read(), reason='new blob suggestion'
         )
 
-        # log all suggestions to a special channel to keep original files and have history for moderation purposes
-        buffer.seek(0)
-        log = self.bot.get_channel(config.suggestions_log)
-        await log.send(
-            f'{name} by {name_id(message.author)}\nfilename: {attachment.filename}'.replace('@', '@\u200b'),
-            file=discord.File(buffer, filename=attachment.filename)
-        )
-
         queue = self.bot.get_channel(config.council_queue)
         msg = await queue.send(emoji)
-
         await msg.add_reaction(config.approve_emoji)
         await msg.add_reaction(config.deny_emoji)
 
-        await self.db.execute(
+        record = await self.db.fetchrow(
             """
             INSERT INTO suggestions (
                 user_id,
@@ -357,11 +349,21 @@ class BlobQueue(Cog):
             VALUES (
                 $1, $2, $3, $4
             )
+            RETURNING idx
             """,
             message.author.id,
             msg.id,
             emoji.id,
             name
+        )
+
+        # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
+        buffer.seek(0)
+        log = self.bot.get_channel(config.suggestions_log)
+        await log.send(
+            (f'**Submission #{record["idx"]}**\n\n:{name}: by {name_id(message.author)}\n'
+             f'Filename: {attachment.filename}').replace('@', '@\u200b'),
+            file=discord.File(buffer, filename=attachment.filename)
         )
 
         await message.delete()
