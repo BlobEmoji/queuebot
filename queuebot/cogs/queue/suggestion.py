@@ -156,7 +156,10 @@ Status: {status}"""
         await self.update_inplace()
 
         if user:
-            await user.send(SUGGESTION_APPROVED)
+            try:
+                await user.send(SUGGESTION_APPROVED)
+            except discord.HTTPException:
+                await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
 
     async def deny(self):
         """Denies this emoji."""
@@ -184,7 +187,10 @@ Status: {status}"""
         await self.delete_from_council_queue()
 
         if user:
-            await user.send(SUGGESTION_DENIED)
+            try:
+                await user.send(SUGGESTION_DENIED)
+            except discord.HTTPException:
+                await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji.')
 
     async def check_council_votes(self):
         upvotes = self.record['upvotes']
