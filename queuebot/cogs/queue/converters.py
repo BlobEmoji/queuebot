@@ -1,6 +1,6 @@
 from discord.ext import commands
 
-from queuebot.cogs.queue import Suggestion
+from queuebot.cogs.queue.suggestion import Suggestion
 
 
 class SuggestionConverter(commands.Converter):

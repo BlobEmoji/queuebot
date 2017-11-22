@@ -10,7 +10,6 @@ from discord.ext import commands
 import config
 from queuebot.checks import is_bot_admin, is_council, is_police
 from queuebot.cog import Cog
-from queuebot.cogs.queue import SuggestionConverter, Suggestion
 from queuebot.cogs.queue.converters import SuggestionConverter
 from queuebot.cogs.queue.suggestion import Suggestion
 from queuebot.utils.formatting import name_id, Table

@@ -1,10 +1,13 @@
 import enum
+import logging
 
 import discord
 
 import config
-from queuebot.cogs.queue import log
-from queuebot.utils import SUBMITTER_NOT_FOUND, UPLOADED_EMOJI_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED
+from queuebot.utils import SUBMITTER_NOT_FOUND, UPLOADED_EMOJI_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, \
+    name_id
+
+log = logging.getLogger(__name__)
 
 
 class Suggestion:
