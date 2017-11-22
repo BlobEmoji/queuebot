@@ -22,8 +22,18 @@ def get_trace(error: Exception) -> str:
 
 
 class Errors(Cog):
-    async def on_error(self, *args, **kwargs):
-        logger.exception('Error!')
+    def __init__(self, bot):
+        super().__init__(bot)
+
+        # Uhh...I don't know.
+        self.__old_on_error = bot.on_error
+        bot.on_error = self.on_error
+
+    def __unload(self):
+        self.bot.on_error = self.__old_on_error
+
+    async def on_error(self, event_method, *args, **kwargs):
+        logger.exception('Error in on_%s:', event_method)
 
     async def on_command_error(self, ctx: Context, exception):
         # TODO: Handle more errors.
