@@ -4,6 +4,7 @@ import logging
 import typing
 from pathlib import Path
 
+import datetime
 from asyncpg.pool import Pool
 import discord
 from discord.ext import commands
@@ -36,11 +37,12 @@ class Queuebot(commands.Bot):
 
         logger.info('Ready! Logged in as %s (%d)', self.user, self.user.id)
 
-    async def log(self, *args, **kwargs) -> typing.Union[discord.Message, None]:
+    async def log(self, content, **kwargs) -> typing.Union[discord.Message, None]:
+        timestamp = f'`[{datetime.datetime.utcnow().strftime("%H:%M")}]`'
         channel = self.get_channel(config.bot_log)
         if not channel:
             return None
-        return await channel.send(*args, **kwargs)
+        return await channel.send(f'{timestamp} {content}', **kwargs)
 
     @property
     def admins(self):
