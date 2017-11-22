@@ -43,18 +43,26 @@ class BlobQueue(Cog):
         self.voting_lock = asyncio.Lock()
 
     async def on_message(self, message: discord.Message):
-        if message.channel.id != config.suggestions_channel:
+        if message.channel.id != config.suggestions_channel or message.author == self.bot.user:
             return
+
+        async def respond(response):
+            try:
+                return await message.author.send(response)
+            except discord.HTTPException:
+                return await message.channel.send(f'{message.author.mention}: {response}', delete_after=25.0)
 
         if not message.attachments:
             await message.delete()
-            return await message.author.send(BAD_SUGGESTION_MSG)
+            await respond(BAD_SUGGESTION_MSG)
+            return
 
         attachment = message.attachments[0]
 
         if not attachment.filename.endswith(('.png', '.jpg')):
             await message.delete()
-            return await message.author.send(BAD_SUGGESTION_MSG)
+            await respond(BAD_SUGGESTION_MSG)
+            return
 
         # Save the emoji image data to an in-memory buffer to upload later, in the logging channel.
         buffer = io.BytesIO()
@@ -117,7 +125,7 @@ class BlobQueue(Cog):
         )
 
         await message.delete()
-        await message.author.send(SUGGESTION_RECIEVED)
+        await respond(SUGGESTION_RECIEVED)
 
     async def on_raw_reaction_add(self, emoji: discord.PartialReactionEmoji, message_id: int,
                                   channel_id: int, user_id: int):
