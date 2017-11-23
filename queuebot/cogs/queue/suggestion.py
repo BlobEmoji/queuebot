@@ -50,6 +50,10 @@ class Suggestion:
         return self.record['public_message_id'] is None and self.record['council_message_id'] is None
 
     @property
+    def emoji_url(self):
+        return f'https://cdn.discordapp.com/emojis/{self.record["emoji_id"]}.png'
+
+    @property
     def status(self):
         if self.is_denied:
             status = 'Denied'

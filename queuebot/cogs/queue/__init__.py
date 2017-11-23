@@ -201,7 +201,16 @@ class BlobQueue(Cog):
     @is_council()
     async def status(self, ctx, suggestion: SuggestionConverter):
         """Views the status of a submission."""
-        return await ctx.send(suggestion.status)
+        await ctx.send(suggestion.status)
+        return
+
+    @commands.command()
+    @is_council()
+    async def show(self, ctx, suggestion: SuggestionConverter):
+        """Show a suggestion's emoji."""
+        embed = discord.Embed(title=f'Suggestion {suggestion.record["idx"]}')
+        embed.set_image(url=suggestion.emoji_url)
+        await ctx.send(embed=embed)
 
     @commands.command(aliases=['sg'])
     @is_council()
