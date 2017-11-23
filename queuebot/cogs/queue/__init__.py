@@ -235,7 +235,7 @@ class BlobQueue(Cog):
         try:
             emoji_im = Image.open(emoji_bio)
         except OSError:
-            await ctx.send("Unable to identify file type of that suggestion. <:blobthinkingfast:357765371962589185>")
+            await ctx.send("Unable to identify the file type of that emoji. <:blobthinkingfast:357765371962589185>")
             return
 
         JUMBO_SIZE = 32
