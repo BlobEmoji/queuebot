@@ -5,6 +5,8 @@ import typing
 from pathlib import Path
 
 import datetime
+
+import aiohttp
 from asyncpg.pool import Pool
 import discord
 from discord.ext import commands
@@ -30,6 +32,14 @@ class Queuebot(commands.Bot):
 
         # Database connection to PostgreSQL
         self.db: Pool = kwargs.pop('db')
+
+        self.session = aiohttp.ClientSession(loop=self.loop)
+
+    async def close(self):
+        logger.info('Closing.')
+        await super().close()
+        await self.db.close()
+        await self.session.close()
 
     async def on_ready(self):
         # Grab owner from application info.
