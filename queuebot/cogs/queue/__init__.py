@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import functools
 import io
 import logging
 import re
+from io import BytesIO
 
+import aiohttp
 import discord
+from PIL import Image, ImageDraw
 from discord.ext import commands
 
 import config
@@ -211,6 +215,65 @@ class BlobQueue(Cog):
         embed = discord.Embed(title=f'Suggestion {suggestion.record["idx"]}')
         embed.set_image(url=suggestion.emoji_url)
         await ctx.send(embed=embed)
+
+    @commands.command()
+    @is_council()
+    async def test(self, ctx, suggestion: SuggestionConverter):
+        """Test a suggestion's appearance on dark and light themes."""
+
+        await ctx.channel.trigger_typing()
+
+        # Download the image.
+        try:
+            async with ctx.bot.session.get(suggestion.emoji_url) as resp:
+                emoji_bytes = await resp.read()
+        except aiohttp.ClientError:
+            await ctx.send("Couldn't download the emoji... <:blobthinkingfast:357765371962589185>")
+
+        emoji_bio = BytesIO(emoji_bytes)
+
+        try:
+            emoji_im = Image.open(emoji_bio)
+        except OSError:
+            await ctx.send("Unable to identify file type of that suggestion. <:blobthinkingfast:357765371962589185>")
+            return
+
+        JUMBO_SIZE = 32
+        NORMAL_SIZE = 22
+
+        def draw_it():
+            nonlocal emoji_im
+
+            canvas = Image.new('RGBA', (JUMBO_SIZE + NORMAL_SIZE, JUMBO_SIZE * 2), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(canvas)
+
+            # --- Dark theme
+            draw.rectangle([(0, 0), (JUMBO_SIZE * 2, JUMBO_SIZE)], fill='#36393e')
+            dark_emoji = emoji_im.resize((JUMBO_SIZE, JUMBO_SIZE), resample=Image.HAMMING)
+            canvas.alpha_composite(dark_emoji, (0, 0))
+            dark_emoji = dark_emoji.resize((NORMAL_SIZE, NORMAL_SIZE), resample=Image.HAMMING)
+            canvas.alpha_composite(dark_emoji, (JUMBO_SIZE, 0))
+
+            # --- Light theme
+            draw.rectangle([(0, JUMBO_SIZE), (JUMBO_SIZE * 2, JUMBO_SIZE * 2)], fill='#ffffff')
+            light_emoji = emoji_im.resize((JUMBO_SIZE, JUMBO_SIZE), resample=Image.HAMMING)
+            canvas.alpha_composite(light_emoji, (0, JUMBO_SIZE))
+            light_emoji = light_emoji.resize((NORMAL_SIZE, NORMAL_SIZE), resample=Image.HAMMING)
+            canvas.alpha_composite(light_emoji, (JUMBO_SIZE, JUMBO_SIZE))
+
+            del draw
+            return canvas
+
+        canvas = await self.bot.loop.run_in_executor(None, draw_it)
+
+        def render():
+            rendered = BytesIO()
+            canvas.save(rendered, format='PNG')
+            rendered.seek(0)
+            return rendered
+
+        rendered = await self.bot.loop.run_in_executor(None, render)
+        await ctx.send(file=discord.File(rendered, filename=f'{suggestion.record["idx"]}.png'))
 
     @commands.command(aliases=['sg'])
     @is_council()
