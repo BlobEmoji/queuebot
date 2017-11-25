@@ -122,6 +122,8 @@ Once these commands have completed, type ``\c mydb myuser`` into psql. It will p
 
 Create a new suggestions table as in `schema.sql <https://github.com/slice/queuebot/blob/master/schema.sql>`__.
 
+In Linux you can do this quickly by doing ``psql -d mydb -U myuser < schema.sql`` on the command line.
+
 Your setup for PostgreSQL is now done and you can log out of psql by typing ``\q``.
 
 config.py
@@ -203,7 +205,7 @@ On Windows:
 .. code-block:: sh
 
   python -m virtualenv venv
-  venv\Scripts\activate.bat
+  "venv\Scripts\activate.bat"
 
 Then use pip to install the requirements:
 
