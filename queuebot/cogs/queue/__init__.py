@@ -5,6 +5,7 @@ import io
 import logging
 import re
 from io import BytesIO
+from os import path
 
 import aiohttp
 import discord
@@ -216,6 +217,35 @@ class BlobQueue(Cog):
         embed.set_image(url=suggestion.emoji_url)
         await ctx.send(embed=embed)
 
+    @staticmethod
+    def test_backend(emoji_image: Image.Image):
+        """Produce theme testing image for a given emoji."""
+        max_dimension = max(emoji_image.size)
+        scalar = 128 / max_dimension
+        new_sizing = int(emoji_image.width * scalar), int(emoji_image.height * scalar)
+        placement = (128 - new_sizing[0]) >> 1, (128 - new_sizing[1]) >> 1
+        
+        with Image.new("RGBA", (128, 128), (0, 0, 0, 0)) as bounding:
+            normalized = emoji_image.convert("RGBA").resize(new_sizing, Image.ANTIALIAS)
+            bounding.paste(normalized, placement, mask=normalized)
+
+            larger = bounding.resize((64, 64), Image.ANTIALIAS)
+            smaller = bounding.resize((44, 44), Image.ANTIALIAS)
+        
+        with Image.open(path.join(path.dirname(__file__), "test_base.png")) as background_im:
+            background_im.paste(smaller, (346, 68), mask=smaller)
+            background_im.paste(larger, (137, 169), mask=larger)
+
+            background_im.paste(smaller, (348, 331), mask=smaller)
+            background_im.paste(larger, (139, 432), mask=larger)
+
+            final_buffer = BytesIO()
+            background_im.resize((410, 259), Image.ANTIALIAS).save(final_buffer, "png")
+        
+        final_buffer.seek(0)
+
+        return final_buffer
+
     @commands.command()
     @is_council()
     async def test(self, ctx, suggestion: SuggestionConverter):
@@ -238,41 +268,7 @@ class BlobQueue(Cog):
             await ctx.send("Unable to identify the file type of that emoji. <:blobthinkingfast:357765371962589185>")
             return
 
-        JUMBO_SIZE = 32
-        NORMAL_SIZE = 22
-
-        def draw_it():
-            nonlocal emoji_im
-
-            canvas = Image.new('RGBA', (JUMBO_SIZE + NORMAL_SIZE, JUMBO_SIZE * 2), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(canvas)
-
-            # --- Dark theme
-            draw.rectangle([(0, 0), (JUMBO_SIZE * 2, JUMBO_SIZE)], fill='#36393e')
-            dark_emoji = emoji_im.resize((JUMBO_SIZE, JUMBO_SIZE), resample=Image.HAMMING)
-            canvas.alpha_composite(dark_emoji, (0, 0))
-            dark_emoji = dark_emoji.resize((NORMAL_SIZE, NORMAL_SIZE), resample=Image.HAMMING)
-            canvas.alpha_composite(dark_emoji, (JUMBO_SIZE, 0))
-
-            # --- Light theme
-            draw.rectangle([(0, JUMBO_SIZE), (JUMBO_SIZE * 2, JUMBO_SIZE * 2)], fill='#ffffff')
-            light_emoji = emoji_im.resize((JUMBO_SIZE, JUMBO_SIZE), resample=Image.HAMMING)
-            canvas.alpha_composite(light_emoji, (0, JUMBO_SIZE))
-            light_emoji = light_emoji.resize((NORMAL_SIZE, NORMAL_SIZE), resample=Image.HAMMING)
-            canvas.alpha_composite(light_emoji, (JUMBO_SIZE, JUMBO_SIZE))
-
-            del draw
-            return canvas
-
-        canvas = await self.bot.loop.run_in_executor(None, draw_it)
-
-        def render():
-            rendered = BytesIO()
-            canvas.save(rendered, format='PNG')
-            rendered.seek(0)
-            return rendered
-
-        rendered = await self.bot.loop.run_in_executor(None, render)
+        rendered = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
         await ctx.send(file=discord.File(rendered, filename=f'{suggestion.record["idx"]}.png'))
 
     @commands.command(aliases=['sg'])
