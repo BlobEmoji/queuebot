@@ -152,6 +152,19 @@ Its basic structure is as follows:
 
   council_roles = [1234567890, 9876543210]  # IDs of roles considered Council (Blob Council, Blob Council Lite, etc)
 
+  approve_emoji_id = 1234567890  # ID of the approval emoji
+  deny_emoji_id = 1234567890  # ID of the denial emoji
+
+  approve_emoji = "name:1234567890"  # representation of the approval emoji
+  deny_emoji = "name:1234567890"  # representation of the denial emoji
+
+  suggestions_channel = 1234567890  # ID of the suggestions channel
+  council_queue = 1234567890  # ID of the council queue channel
+  approval_queue = 1234567890  # ID of the approval queue channel
+
+  suggestions_log = 1234567890  # ID of the suggestions log channel
+  council_changelog = 1234567890  # ID of the council changelog channel
+
 Substitute values here for your own.
 
 libuv
