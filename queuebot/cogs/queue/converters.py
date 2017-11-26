@@ -23,8 +23,9 @@ class PartialSuggestionConverter(commands.Converter):
             return (suggestion.record["idx"], suggestion.emoji_url)
         except (ValueError, Suggestion.NotFound):
             if argument.startswith(("http://", "https://")):
-                await asyncio.sleep(1)  # wait up to a second for the embed to load in
-                if ctx.message.embeds and ctx.message.embeds[0].thumbnail:
-                    return (None, ctx.message.embeds[0].thumbnail.proxy_url)
+                for _ in range(10):
+                    await asyncio.sleep(0.5)
+                    if ctx.message.embeds and ctx.message.embeds[0].thumbnail:
+                        return (None, ctx.message.embeds[0].thumbnail.proxy_url)     
             
             raise commands.BadArgument("Couldn't resolve to suggestion or image.")
