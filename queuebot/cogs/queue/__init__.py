@@ -15,7 +15,7 @@ from discord.ext import commands
 import config
 from queuebot.checks import is_bot_admin, is_council, is_police
 from queuebot.cog import Cog
-from queuebot.cogs.queue.converters import SuggestionConverter
+from queuebot.cogs.queue.converters import SuggestionConverter, PartialSuggestionConverter
 from queuebot.cogs.queue.suggestion import Suggestion
 from queuebot.utils.formatting import name_id, Table
 from queuebot.utils.messages import *
@@ -248,14 +248,20 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council()
-    async def test(self, ctx, suggestion: SuggestionConverter):
+    async def test(self, ctx, suggestion: PartialSuggestionConverter=None):
         """Test a suggestion's appearance on dark and light themes."""
+
+        if suggestion is None:
+            if ctx.message.attachments and ctx.message.attachments[0].proxy_url:
+                suggestion = (None, ctx.message.attachments[0].proxy_url)
+            else:
+                raise commands.BadArgument("Couldn't resolve to suggestion or image.")
 
         await ctx.channel.trigger_typing()
 
         # Download the image.
         try:
-            async with ctx.bot.session.get(suggestion.emoji_url) as resp:
+            async with ctx.bot.session.get(suggestion[1]) as resp:
                 emoji_bytes = await resp.read()
         except aiohttp.ClientError:
             await ctx.send("Couldn't download the emoji... <:blobthinkingfast:357765371962589185>")
@@ -269,7 +275,7 @@ class BlobQueue(Cog):
             return
 
         rendered = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
-        await ctx.send(file=discord.File(rendered, filename=f'{suggestion.record["idx"]}.png'))
+        await ctx.send(file=discord.File(rendered, filename=f'{suggestion[0]}.png'))
 
     @commands.command(aliases=['sg'])
     @is_council()
