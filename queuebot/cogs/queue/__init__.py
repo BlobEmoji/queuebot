@@ -257,25 +257,26 @@ class BlobQueue(Cog):
             else:
                 raise commands.BadArgument("Couldn't resolve to suggestion or image.")
 
-        await ctx.channel.trigger_typing()
+        async with ctx.channel.typing():
 
-        # Download the image.
-        try:
-            async with ctx.bot.session.get(suggestion[1]) as resp:
-                emoji_bytes = await resp.read()
-        except aiohttp.ClientError:
-            await ctx.send("Couldn't download the emoji... <:blobthinkingfast:357765371962589185>")
+            # Download the image.
+            try:
+                async with ctx.bot.session.get(suggestion[1]) as resp:
+                    emoji_bytes = await resp.read()
+            except aiohttp.ClientError:
+                await ctx.send("Couldn't download the emoji... <:blobthinkingfast:357765371962589185>")
 
-        emoji_bio = BytesIO(emoji_bytes)
+            emoji_bio = BytesIO(emoji_bytes)
 
-        try:
-            emoji_im = Image.open(emoji_bio)
-        except OSError:
-            await ctx.send("Unable to identify the file type of that emoji. <:blobthinkingfast:357765371962589185>")
-            return
+            try:
+                emoji_im = Image.open(emoji_bio)
+            except OSError:
+                await ctx.send("Unable to identify the file type of that emoji. "
+                               "<:blobthinkingfast:357765371962589185>")
+                return
 
-        rendered = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
-        await ctx.send(file=discord.File(rendered, filename=f'{suggestion[0]}.png'))
+            rendered = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
+            await ctx.send(file=discord.File(rendered, filename=f'{suggestion[0]}.png'))
 
     @commands.command(aliases=['sg'])
     @is_council()

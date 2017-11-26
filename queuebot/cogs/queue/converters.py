@@ -23,6 +23,7 @@ class PartialSuggestionConverter(commands.Converter):
             return (suggestion.record["idx"], suggestion.emoji_url)
         except (ValueError, Suggestion.NotFound):
             if argument.startswith(("http://", "https://")):
+                await ctx.channel.trigger_typing()
                 for _ in range(10):
                     await asyncio.sleep(0.5)
                     if ctx.message.embeds and ctx.message.embeds[0].thumbnail:
