@@ -154,6 +154,8 @@ Its basic structure is as follows:
 
   council_roles = [1234567890, 9876543210]  # IDs of roles considered Council (Blob Council, Blob Council Lite, etc)
 
+  blob_guilds = [37428175841, ]  # IDs of all guilds the bot updates an emoji list in
+
   approve_emoji_id = 1234567890  # ID of the approval emoji
   deny_emoji_id = 1234567890  # ID of the denial emoji
 
