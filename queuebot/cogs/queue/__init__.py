@@ -95,8 +95,18 @@ class BlobQueue(Cog):
             name=name, image=buffer.read(), reason='new blob suggestion'
         )
 
+        buffer.seek(0)  # seek back again for test image impl
+
+        try:
+            emoji_im = Image.open(buffer)
+        except OSError:
+            queue_file = None  # fallback
+        else:
+            test_image_buffer = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
+            queue_file = discord.File(fp=test_image_buffer, filename="example.png")
+
         queue = self.bot.get_channel(config.council_queue)
-        msg = await queue.send(emoji)
+        msg = await queue.send(emoji, file=queue_file)
         await msg.add_reaction(config.approve_emoji)
         await msg.add_reaction(config.deny_emoji)
 
