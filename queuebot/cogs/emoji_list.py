@@ -13,7 +13,7 @@ def format_emoji_list(guild: discord.Guild) -> List[str]:
     output = ['\u200b', '\u200b']
     emoji = sorted(guild.emojis, key=lambda x: x.id)
 
-    # since messages are at most 2000 characters 27 emoji can fit on a page
+    # Since messages are 2000 characters at most, only 27 emoji can fit on a page.
     for idx, chunk in enumerate(emoji[x:x + 27] for x in range(0, len(emoji), 27)):
         msg = '\n'.join(f'{emoji} = `:{emoji.name}:`' for emoji in chunk)
         output[idx] = msg
@@ -32,7 +32,9 @@ class EmojiList(Cog):
         messages = await channel.history().filter(lambda m: m.author == self.bot.user).flatten()
 
         if not messages:
-            for idx in range(2):  # ???: why 2?
+            # Guilds can have a maximum of 50 emoji, which makes up 2 messages.
+            # One message can only fit 27 entries, so we need two messages here.
+            for idx in range(2):
                 await channel.send(formatted[idx])
             return
 
