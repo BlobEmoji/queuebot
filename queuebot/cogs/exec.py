@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Handy exec (eval, debug) cog. Allows you to run code on the bot during runtime. This cog is a combination of the
 exec commands of other bot authors, allowing for maximum efficiency:
