@@ -74,11 +74,11 @@ class Queuebot(commands.Bot):
         await self.process_commands(msg)
 
     def load_extension(self, name: str):
-        module = importlib.import_module(name)
+        extension_module = importlib.import_module(name)
 
         # Find Cog subclasses in the module.
         cogs = inspect.getmembers(
-            module, predicate=lambda obj: inspect.isclass(obj) and issubclass(obj, Cog) and obj is not Cog
+            extension_module, predicate=lambda obj: inspect.isclass(obj) and issubclass(obj, Cog) and obj is not Cog
         )
 
         # Add all Cog subclasses.
@@ -87,18 +87,18 @@ class Queuebot(commands.Bot):
             self.add_cog(cog(self))
 
         # Call setup(), if there is one.
-        if hasattr(module, 'setup'):
-            module.setup(self)
+        if hasattr(extension_module, 'setup'):
+            extension_module.setup(self)
 
-        self.extensions[name] = module
+        self.extensions[name] = extension_module
 
     def discover_exts(self, directory: str):
         """Loads all extensions from a directory."""
-        IGNORE = {'__pycache__', '__init__'}
+        ignore = {'__pycache__', '__init__'}
 
         exts = [
             p.stem for p in Path(directory).resolve().iterdir()
-            if p.stem not in IGNORE
+            if p.stem not in ignore
         ]
 
         logger.info('Loading extensions: %s', exts)

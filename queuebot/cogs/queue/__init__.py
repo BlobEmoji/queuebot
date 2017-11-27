@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import functools
 import io
 import logging
 import re
@@ -9,7 +8,7 @@ from os import path
 
 import aiohttp
 import discord
-from PIL import Image, ImageDraw
+from PIL import Image
 from discord.ext import commands
 
 import config
@@ -23,7 +22,7 @@ from queuebot.utils.messages import *
 # Matches the full string or the name of a custom emoji (since replacements for those might be posted).
 NAME_RE = re.compile(r'(\w{1,32}):?\d?')
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def is_vote(emoji: discord.PartialReactionEmoji, channel_id: int) -> bool:
@@ -137,7 +136,7 @@ class BlobQueue(Cog):
         if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
             return
 
-        log.debug('Received reaction add.')
+        logger.debug('Received reaction add.')
 
         async with self.voting_lock:
             s = await Suggestion.get_from_message(message_id)
@@ -148,11 +147,14 @@ class BlobQueue(Cog):
         if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
             return
 
-        log.debug('Received reaction remove.')
+        logger.debug('Received reaction remove.')
 
         async with self.voting_lock:
             s = await Suggestion.get_from_message(message_id)
             await s.process_vote(emoji, Suggestion.VoteType.NAY, message_id)
+
+    def has_emoji_slots(self, guild: discord.Guild) -> bool:
+        return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
 
     async def get_buffer_guild(self) -> discord.Guild:
         """
@@ -166,10 +168,8 @@ class BlobQueue(Cog):
         HTTPException
             The bot is in more than 10 guilds total while creating a new guild.
         """
-        def has_emoji_slots(guild: discord.Guild) -> bool:
-            return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
 
-        guild = discord.utils.find(has_emoji_slots, self.bot.guilds)
+        guild = discord.utils.find(self.has_emoji_slots, self.bot.guilds)
         if guild is not None:
             return guild
 
@@ -190,7 +190,7 @@ class BlobQueue(Cog):
     @is_police()
     async def approve(self, ctx, suggestion: SuggestionConverter):
         """Moves a suggestion from the council queue to the public queue."""
-        log.info('%s: moving %s to public queue', ctx.author, suggestion)
+        logger.info('%s: moving %s to public queue', ctx.author, suggestion)
         await suggestion.move_to_public_queue()
         await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
 
@@ -198,7 +198,7 @@ class BlobQueue(Cog):
     @is_police()
     async def deny(self, ctx, suggestion: SuggestionConverter):
         """Denies an emoji that is currently in the council queue."""
-        log.info('%s: denying %s', ctx.author, suggestion)
+        logger.info('%s: denying %s', ctx.author, suggestion)
         await suggestion.deny()
         await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
 
@@ -265,6 +265,7 @@ class BlobQueue(Cog):
                     emoji_bytes = await resp.read()
             except aiohttp.ClientError:
                 await ctx.send("Couldn't download the emoji... <:blobthinkingfast:357765371962589185>")
+                return
 
             emoji_bio = BytesIO(emoji_bytes)
 
