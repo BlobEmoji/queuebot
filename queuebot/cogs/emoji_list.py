@@ -29,16 +29,10 @@ class EmojiList(Cog):
         formatted = format_emoji_list(guild)
         channel = discord.utils.get(guild.text_channels, name='emoji-list')
 
-        messages = []
-
-        async for message in channel.history():
-            if message.author != self.bot.user:
-                continue
-
-            messages.append(message)
+        messages = await channel.history().filter(lambda m: m.author == self.bot.user).flatten()
 
         if not messages:
-            for idx in range(2):
+            for idx in range(2):  # ???: why 2?
                 await channel.send(formatted[idx])
             return
 
