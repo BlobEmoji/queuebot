@@ -64,11 +64,19 @@ class Suggestion:
         else:
             status = 'In the private council queue'
 
+        submission_time = self.record["submission_time"] or "Unknown time"
+
+        if self.record["forced_by"]:
+            force_text = f"Forced by: <@{self.record['forced_by']}>\nReason: {self.record['forced_reason']}"
+        else:
+            force_text = ""
+
         return f"""**Suggestion #{self.record['idx']}**
 
-Submitted by <@{self.record['user_id']}>
+Submitted by <@{self.record['user_id']}> at {submission_time}
 Upvotes: **{self.record['upvotes']}** / Downvotes: **{self.record['downvotes']}**
-Status: {status}"""
+Status: {status}
+{force_text}"""
 
     async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
         """Processes a vote for this suggestion."""
