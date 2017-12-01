@@ -209,6 +209,8 @@ Status: {status}
             """,
             reason, who, datetime.datetime.utcnow(), self.record['idx'])
 
+        await self.update_inplace()
+
         changelog = self.bot.get_channel(config.council_changelog)
 
         await changelog.send(f'<:{config.deny_emoji}> denied: {emoji} (by <@{user_id}>)')
