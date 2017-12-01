@@ -58,9 +58,15 @@ class Suggestion:
     @property
     def status(self):
         if self.is_denied:
-            status = 'Denied'
+            if self.record["validation_time"]:
+                status = f'Denied at {self.record["validation_time"]} UTC'
+            else:
+                status = "Denied"
         elif self.is_in_public_queue:
-            status = 'In the public approval queue'
+            if self.record["validation_time"]:
+                status = f'Moved to public queue at {self.record["validation_time"]} UTC'
+            else:
+                status = 'In the public approval queue'
         else:
             status = 'In the private council queue'
 
