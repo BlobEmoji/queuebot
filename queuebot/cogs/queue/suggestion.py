@@ -45,11 +45,11 @@ class Suggestion:
 
     @property
     def is_in_public_queue(self):
-        return self.record['public_message_id'] is not None
+        return self.record['council_approved'] is True
 
     @property
     def is_denied(self):
-        return self.record['public_message_id'] is None and self.record['council_message_id'] is None
+        return self.record['council_approved'] is False  # do not accept None
 
     @property
     def emoji_url(self):
