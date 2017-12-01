@@ -116,17 +116,19 @@ class BlobQueue(Cog):
                 user_id,
                 council_message_id,
                 emoji_id,
-                emoji_name
+                emoji_name,
+                submission_time
             )
             VALUES (
-                $1, $2, $3, $4
+                $1, $2, $3, $4, $5
             )
             RETURNING idx
             """,
             message.author.id,
             msg.id,
             emoji.id,
-            name
+            name,
+            message.created_at
         )
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
@@ -198,18 +200,20 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_police()
-    async def approve(self, ctx, suggestion: SuggestionConverter):
+    async def approve(self, ctx, suggestion: SuggestionConverter, *, reason=None):
         """Moves a suggestion from the council queue to the public queue."""
         logger.info('%s: moving %s to public queue', ctx.author, suggestion)
-        await suggestion.move_to_public_queue()
+        reason = reason or None  # do not push empty strings
+        await suggestion.move_to_public_queue(ctx.author.id, reason)
         await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
 
     @commands.command()
     @is_police()
-    async def deny(self, ctx, suggestion: SuggestionConverter):
+    async def deny(self, ctx, suggestion: SuggestionConverter, *, reason=None):
         """Denies an emoji that is currently in the council queue."""
         logger.info('%s: denying %s', ctx.author, suggestion)
-        await suggestion.deny()
+        reason = reason or None  # do not push empty strings
+        await suggestion.deny(ctx.author.id, reason)
         await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
 
     @commands.command()

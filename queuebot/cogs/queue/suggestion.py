@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import enum
 import logging
 
@@ -112,7 +113,7 @@ Status: {status}"""
         """, self.record['idx'])
         await self.update_inplace()
 
-    async def move_to_public_queue(self):
+    async def move_to_public_queue(self, who=None, reason=None):
         """Moves this suggestion to the public queue."""
         if self.is_in_public_queue:
             raise self.OperationError(
@@ -153,10 +154,14 @@ Status: {status}"""
         await self.db.execute(
             """
             UPDATE suggestions
-            SET public_message_id = $1
-            WHERE idx = $2
+            SET public_message_id = $1,
+            council_approved = TRUE,
+            forced_reason = $2,
+            forced_by = $3,
+            validation_time = $4
+            WHERE idx = $5
             """,
-            msg.id, self.record['idx']
+            msg.id, reason, who, datetime.datetime.utcnow(), self.record['idx']
         )
         await self.update_inplace()
 
@@ -166,7 +171,7 @@ Status: {status}"""
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
 
-    async def deny(self):
+    async def deny(self, who=None, reason=None):
         """Denies this emoji."""
         # Sane checks for command usage.
         if self.is_in_public_queue:
@@ -184,6 +189,17 @@ Status: {status}"""
 
         if not user:
             await self.bot.log(SUBMITTER_NOT_FOUND.format(action='deny', suggestion=self.record))
+
+        await self.db.execute(
+            """
+            UPDATE suggestions
+            SET council_approved = FALSE,
+            forced_reason = $1,
+            forced_by = $2,
+            validation_time = $3
+            WHERE idx = $4
+            """,
+            reason, who, datetime.datetime.utcnow(), self.record['idx'])
 
         changelog = self.bot.get_channel(config.council_changelog)
 
