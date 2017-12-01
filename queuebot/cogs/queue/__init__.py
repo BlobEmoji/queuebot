@@ -204,7 +204,7 @@ class BlobQueue(Cog):
         """Moves a suggestion from the council queue to the public queue."""
         logger.info('%s: moving %s to public queue', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
-        await suggestion.move_to_public_queue(ctx.author.id, reason)
+        await suggestion.move_to_public_queue(who=ctx.author.id, reason=reason)
         await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
 
     @commands.command()
@@ -213,7 +213,7 @@ class BlobQueue(Cog):
         """Denies an emoji that is currently in the council queue."""
         logger.info('%s: denying %s', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
-        await suggestion.deny(ctx.author.id, reason)
+        await suggestion.deny(who=ctx.author.id, reason=reason)
         await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
 
     @commands.command()

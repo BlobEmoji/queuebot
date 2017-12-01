@@ -73,7 +73,7 @@ class Suggestion:
 
         return f"""**Suggestion #{self.record['idx']}**
 
-Submitted by <@{self.record['user_id']}> at {submission_time}
+Submitted by <@{self.record['user_id']}> at {submission_time} UTC
 Upvotes: **{self.record['upvotes']}** / Downvotes: **{self.record['downvotes']}**
 Status: {status}
 {force_text}"""
@@ -121,7 +121,7 @@ Status: {status}
         """, self.record['idx'])
         await self.update_inplace()
 
-    async def move_to_public_queue(self, who=None, reason=None):
+    async def move_to_public_queue(self, *, who=None, reason=None):
         """Moves this suggestion to the public queue."""
         if self.is_in_public_queue:
             raise self.OperationError(
@@ -179,7 +179,7 @@ Status: {status}
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
 
-    async def deny(self, who=None, reason=None):
+    async def deny(self, *, who=None, reason=None):
         """Denies this emoji."""
         # Sane checks for command usage.
         if self.is_in_public_queue:
