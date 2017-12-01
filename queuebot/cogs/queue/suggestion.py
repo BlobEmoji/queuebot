@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import enum
 import logging
 
@@ -44,11 +45,11 @@ class Suggestion:
 
     @property
     def is_in_public_queue(self):
-        return self.record['public_message_id'] is not None
+        return self.record['council_approved'] is True
 
     @property
     def is_denied(self):
-        return self.record['public_message_id'] is None and self.record['council_message_id'] is None
+        return self.record['council_approved'] is False  # do not accept None
 
     @property
     def emoji_url(self):
@@ -57,17 +58,31 @@ class Suggestion:
     @property
     def status(self):
         if self.is_denied:
-            status = 'Denied'
+            if self.record["validation_time"]:
+                status = f'Denied at {self.record["validation_time"]} UTC'
+            else:
+                status = "Denied"
         elif self.is_in_public_queue:
-            status = 'In the public approval queue'
+            if self.record["validation_time"]:
+                status = f'Moved to public queue at {self.record["validation_time"]} UTC'
+            else:
+                status = 'In the public approval queue'
         else:
             status = 'In the private council queue'
 
+        submission_time = self.record["submission_time"] or "Unknown time"
+
+        if self.record["forced_by"]:
+            force_text = f"Forced by: <@{self.record['forced_by']}>\nReason: {self.record['forced_reason']}"
+        else:
+            force_text = ""
+
         return f"""**Suggestion #{self.record['idx']}**
 
-Submitted by <@{self.record['user_id']}>
+Submitted by <@{self.record['user_id']}> at {submission_time} UTC
 Upvotes: **{self.record['upvotes']}** / Downvotes: **{self.record['downvotes']}**
-Status: {status}"""
+Status: {status}
+{force_text}"""
 
     async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
         """Processes a vote for this suggestion."""
@@ -112,7 +127,7 @@ Status: {status}"""
         """, self.record['idx'])
         await self.update_inplace()
 
-    async def move_to_public_queue(self):
+    async def move_to_public_queue(self, *, who=None, reason=None):
         """Moves this suggestion to the public queue."""
         if self.is_in_public_queue:
             raise self.OperationError(
@@ -153,10 +168,14 @@ Status: {status}"""
         await self.db.execute(
             """
             UPDATE suggestions
-            SET public_message_id = $1
-            WHERE idx = $2
+            SET public_message_id = $1,
+            council_approved = TRUE,
+            forced_reason = $2,
+            forced_by = $3,
+            validation_time = $4
+            WHERE idx = $5
             """,
-            msg.id, self.record['idx']
+            msg.id, reason, who, datetime.datetime.utcnow(), self.record['idx']
         )
         await self.update_inplace()
 
@@ -166,7 +185,7 @@ Status: {status}"""
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
 
-    async def deny(self):
+    async def deny(self, *, who=None, reason=None):
         """Denies this emoji."""
         # Sane checks for command usage.
         if self.is_in_public_queue:
@@ -184,6 +203,19 @@ Status: {status}"""
 
         if not user:
             await self.bot.log(SUBMITTER_NOT_FOUND.format(action='deny', suggestion=self.record))
+
+        await self.db.execute(
+            """
+            UPDATE suggestions
+            SET council_approved = FALSE,
+            forced_reason = $1,
+            forced_by = $2,
+            validation_time = $3
+            WHERE idx = $4
+            """,
+            reason, who, datetime.datetime.utcnow(), self.record['idx'])
+
+        await self.update_inplace()
 
         changelog = self.bot.get_channel(config.council_changelog)
 
