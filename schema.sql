@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS suggestions (
     -- message id in the #approval-queue
     public_message_id BIGINT,
 
+    -- message id in the #suggestions
+    suggestions_message_id BIGINT,
+
     -- emoji data
     emoji_id BIGINT,
     emoji_name TEXT,
