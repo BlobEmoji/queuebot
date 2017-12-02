@@ -34,7 +34,8 @@ BAD_SUGGESTION_MSG = (
 SUGGESTION_RECIEVED = (
     'Thanks for your emoji submission to the '
     'Google Blob Server! It\'s been added to our internal vote queue, '
-    'so expect an update soon!'
+    'so expect an update soon! Your suggestion was left in the channel as a '
+    'public indication, please don\'t delete it!'
 )
 
 SUGGESTION_APPROVED = (

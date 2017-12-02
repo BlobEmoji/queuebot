@@ -8,6 +8,7 @@ import discord
 import config
 from queuebot.utils import SUBMITTER_NOT_FOUND, UPLOADED_EMOJI_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, \
     name_id
+from config import suggestions_channel
 
 log = logging.getLogger(__name__)
 
@@ -166,6 +167,7 @@ Status: {status}
 
         await emoji.delete()
         await self.delete_from_council_queue()
+        await self.delete_from_suggestions_channel()
 
         # Update this suggestion's row in the databse to reflect the move to the public queue.
         log.info('Setting public_messsage_id -> %d', msg.id)
@@ -227,6 +229,7 @@ Status: {status}
         await changelog.send(f'<:{config.deny_emoji}> denied: {emoji} (by <@{user_id}>)')
         await emoji.delete()
         await self.delete_from_council_queue()
+        await self.delete_from_suggestions_channel()
 
         if user:
             try:
@@ -256,6 +259,27 @@ Status: {status}
             await self.move_to_public_queue()
         elif downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15:
             await self.deny()
+
+    async def delete_from_suggestions_channel(self):
+        """Deletes the suggestion message from the suggestions channel."""
+        message_id = self.record['suggestions_message_id']
+
+        if not message_id:
+            log.debug('No suggestions_message_id associated with this suggestion.')
+            return
+
+        channel = self.bot.get_channel(suggestions_channel)
+
+        try:
+            message = await channel.get_message(message_id)
+            await message.delete()
+            log.debug('Removed message %d from suggestions channel.', message.id)
+        except discord.HTTPException:
+            await self.bot.log(
+                f"\N{WARNING SIGN} Failed to delete suggestion #{self.record['idx']}'s message in "
+                f"<#{suggestions_channel}>."
+            )
+            log.exception("Failed to delete %s\'s suggestion message ID:", self)
 
     async def update_inplace(self):
         """Updates the internal state of this suggestion from the Postgres database."""

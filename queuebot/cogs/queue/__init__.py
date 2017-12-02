@@ -118,10 +118,11 @@ class BlobQueue(Cog):
                 council_message_id,
                 emoji_id,
                 emoji_name,
-                submission_time
+                submission_time,
+                suggestions_message_id
             )
             VALUES (
-                $1, $2, $3, $4, $5
+                $1, $2, $3, $4, $5, $6
             )
             RETURNING idx
             """,
@@ -129,7 +130,8 @@ class BlobQueue(Cog):
             msg.id,
             emoji.id,
             name,
-            message.created_at
+            message.created_at,
+            message.id
         )
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
@@ -141,7 +143,7 @@ class BlobQueue(Cog):
             file=discord.File(buffer, filename=attachment.filename)
         )
 
-        await message.delete()
+        await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECIEVED)
 
     async def on_raw_reaction_add(self, emoji: discord.PartialReactionEmoji, message_id: int,

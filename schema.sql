@@ -1,4 +1,3 @@
-
 -- migration compat, remove when suitable time has passed
 ALTER TABLE IF EXISTS suggestions
     -- timestamps
@@ -8,7 +7,10 @@ ALTER TABLE IF EXISTS suggestions
     -- validation
     ADD COLUMN IF NOT EXISTS council_approved BOOLEAN, -- was the emoji approved by Council?
     ADD COLUMN IF NOT EXISTS forced_reason TEXT, -- reason for Council validation being forced.
-    ADD COLUMN IF NOT EXISTS forced_by BIGINT -- ID of the user who forced this. if not forced, this is NULL.
+    ADD COLUMN IF NOT EXISTS forced_by BIGINT, -- ID of the user who forced this. if not forced, this is NULL.
+
+    -- message ids
+    ADD COLUMN IF NOT EXISTS suggestions_message_id BIGINT -- ID of the message ID in the suggestions queue
 ;
 
 
