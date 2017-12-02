@@ -44,6 +44,7 @@ class BlobQueue(Cog):
 
         Suggestion.db = bot.db
         Suggestion.bot = bot
+
         self.voting_lock = asyncio.Lock()
 
     async def on_message(self, message: discord.Message):
@@ -202,7 +203,7 @@ class BlobQueue(Cog):
     @is_police()
     async def approve(self, ctx, suggestion: SuggestionConverter, *, reason=None):
         """Moves a suggestion from the council queue to the public queue."""
-        logger.info('%s: moving %s to public queue', ctx.author, suggestion)
+        logger.info('%s: Moving %s to public (approval) queue.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.move_to_public_queue(who=ctx.author.id, reason=reason)
         await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
@@ -211,7 +212,7 @@ class BlobQueue(Cog):
     @is_police()
     async def deny(self, ctx, suggestion: SuggestionConverter, *, reason=None):
         """Denies an emoji that is currently in the council queue."""
-        logger.info('%s: denying %s', ctx.author, suggestion)
+        logger.info('%s: Denying %s.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.deny(who=ctx.author.id, reason=reason)
         await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
@@ -238,14 +239,14 @@ class BlobQueue(Cog):
         scalar = 128 / max_dimension
         new_sizing = int(emoji_image.width * scalar), int(emoji_image.height * scalar)
         placement = (128 - new_sizing[0]) >> 1, (128 - new_sizing[1]) >> 1
-        
+
         with Image.new("RGBA", (128, 128), (0, 0, 0, 0)) as bounding:
             normalized = emoji_image.convert("RGBA").resize(new_sizing, Image.ANTIALIAS)
             bounding.paste(normalized, placement, mask=normalized)
 
             larger = bounding.resize((64, 64), Image.ANTIALIAS)
             smaller = bounding.resize((44, 44), Image.ANTIALIAS)
-        
+
         with Image.open(path.join(path.dirname(__file__), "test_base.png")) as background_im:
             background_im.paste(smaller, (346, 68), mask=smaller)
             background_im.paste(larger, (137, 169), mask=larger)
@@ -255,7 +256,7 @@ class BlobQueue(Cog):
 
             final_buffer = BytesIO()
             background_im.resize((410, 259), Image.ANTIALIAS).save(final_buffer, "png")
-        
+
         final_buffer.seek(0)
 
         return final_buffer

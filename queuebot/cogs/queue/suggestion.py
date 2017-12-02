@@ -57,6 +57,7 @@ class Suggestion:
 
     @property
     def status(self):
+        """Returns a human-friendly representation of this suggestion."""
         if self.is_denied:
             if self.record["validation_time"]:
                 status = f'Denied at {self.record["validation_time"]} UTC'
@@ -85,7 +86,12 @@ Status: {status}
 {force_text}"""
 
     async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
-        """Processes a vote for this suggestion."""
+        """
+        Processes a vote for this suggestion.
+
+        Internally, the upvotes/downvotes column in the database is updated, and a vote check occurs.
+        This method is also called for public queue votes, but we do not check those votes, only tally them.
+        """
         log.debug(
             'Processsing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d)',
             self, vote_emoji, vote_type.operator, message_id
@@ -154,16 +160,14 @@ Status: {status}
             f'<:{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
         )
 
-        # Send it to the public queue, and add the ticks.
         msg = await queue.send(emoji)
         await msg.add_reaction(config.approve_emoji)
         await msg.add_reaction(config.deny_emoji)
 
-        # Delete the emoji, and remove the voting message from the council queue.
         await emoji.delete()
         await self.delete_from_council_queue()
 
-        # Set the public message id.
+        # Update this suggestion's row in the databse to reflect the move to the public queue.
         log.info('Setting public_messsage_id -> %d', msg.id)
         await self.db.execute(
             """
@@ -213,7 +217,8 @@ Status: {status}
             validation_time = $3
             WHERE idx = $4
             """,
-            reason, who, datetime.datetime.utcnow(), self.record['idx'])
+            reason, who, datetime.datetime.utcnow(), self.record['idx']
+        )
 
         await self.update_inplace()
 
@@ -230,6 +235,12 @@ Status: {status}
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji.')
 
     async def check_council_votes(self):
+        """
+        Checks the amount of upvotes and downvotes for this suggestion, and performs a denial or transfer to the council
+        queue if applicable.
+
+        The conclusion logic is identical to b1nb0t.
+        """
         upvotes = self.record['upvotes']
         downvotes = self.record['downvotes']
 
@@ -241,12 +252,13 @@ Status: {status}
                 'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.record['idx']
             )
             await self.update_inplace()
+
             await self.move_to_public_queue()
         elif downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15:
             await self.deny()
 
     async def update_inplace(self):
-        """Updates the internal state of this Suggestion from Postgres."""
+        """Updates the internal state of this suggestion from the Postgres database."""
         self.record = await self.db.fetchrow(
             'SELECT * FROM suggestions WHERE idx = $1',
             self.record['idx']
