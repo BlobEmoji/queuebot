@@ -191,7 +191,7 @@ Status: {status}
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
 
-    async def deny(self, *, who=None, reason=None):
+    async def deny(self, *, who=None, reason=None, revoke=False):
         """Denies this emoji."""
         # Sane checks for command usage.
         if self.is_in_public_queue:
@@ -222,16 +222,27 @@ Status: {status}
             reason, who, datetime.datetime.utcnow(), self.record['idx']
         )
 
+        if revoke:
+            await self.db.execute(
+                """
+                UPDATE suggestions
+                SET revoked = TRUE
+                WHERE idx = $1
+                """,
+                self.record['idx']
+            )
+
         await self.update_inplace()
 
         changelog = self.bot.get_channel(config.council_changelog)
 
-        await changelog.send(f'<:{config.deny_emoji}> denied: {emoji} (by <@{user_id}>)')
+        action = 'revoked' if revoke else 'denied'
+        await changelog.send(f'<:{config.deny_emoji}> {action}: {emoji} (by <@{user_id}>)')
         await emoji.delete()
         await self.delete_from_council_queue()
         await self.delete_from_suggestions_channel()
 
-        if user:
+        if user and not revoke:
             try:
                 await user.send(SUGGESTION_DENIED)
             except discord.HTTPException:

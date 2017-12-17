@@ -11,6 +11,8 @@ ALTER TABLE IF EXISTS suggestions
 
     -- message ids
     ADD COLUMN IF NOT EXISTS suggestions_message_id BIGINT -- ID of the message ID in the suggestions queue
+
+    ADD COLUMN IF NOT EXISTS revoked BOOLEAN, -- emoji was revoked by submitter
 ;
 
 
@@ -45,5 +47,6 @@ CREATE TABLE IF NOT EXISTS suggestions (
     -- validation
     council_approved BOOLEAN, -- was the emoji approved by Council?
     forced_reason TEXT, -- reason for Council validation being forced.
-    forced_by BIGINT -- ID of the user who forced this. if not forced, this is NULL.
+    forced_by BIGINT, -- ID of the user who forced this. if not forced, this is NULL.
+    revoked BOOLEAN -- emoji was revoked by submitter
 );

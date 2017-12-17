@@ -227,6 +227,80 @@ class BlobQueue(Cog):
         return
 
     @commands.command()
+    async def revoke(self, ctx):
+        """User-facing: DMs the user a wizard for revoking their own suggestions."""
+
+        # delete the message to prevent spam
+        if ctx.guild:
+            await ctx.message.delete()
+
+        # fetch submissions made by this user that hasn't reached a verdict
+        submissions = await ctx.bot.db.fetch(
+            """
+            SELECT * FROM suggestions
+            WHERE user_id = $1 AND council_approved IS NULL
+            """,
+            ctx.author.id
+        )
+
+        async def cannot_dm():
+            await ctx.send(f"{ctx.author.mention}: I can't DM you, please adjust your settings.", delete_after=5.0)
+
+        if not submissions:
+            try:
+                await ctx.author.send("You have no suggestions to revoke at this time.")
+            except discord.HTTPException:
+                await cannot_dm()
+            return
+
+        picker = discord.Embed(title='Submissions')
+        picker.description = '\n'.join([
+            f'{index+1}: {r["emoji_name"]} (submitted {r["submission_time"]})' for index, r in enumerate(submissions)
+        ])
+
+        command = 'Please pick a suggestion to revoke by sending its number.'
+        try:
+            await ctx.author.send(command, embed=picker)
+        except discord.HTTPException:
+            await cannot_dm()
+            return
+
+        def check(msg):
+            return not msg.guild and msg.author.id == ctx.author.id
+
+        tries = 0
+        chosen = None
+        while True:
+            if tries == 3:
+                await ctx.author.send('I give up!')
+                return
+
+            message = await ctx.bot.wait_for('message', check=check)
+
+            try:
+                index = int(message.content)
+            except ValueError:
+                await ctx.author.send(f'Invalid number. {command}')
+                tries += 1
+                continue
+
+            if index > len(submissions) or index < 1:
+                await ctx.author.send(f'Invalid choice. {command}')
+                tries += 1
+                continue
+
+            chosen = submissions[index - 1]
+            break
+
+        suggestion = Suggestion(chosen)
+        await suggestion.deny(
+            who=ctx.author.id,
+            reason='Manually revoked',
+            revoke=True
+        )
+        await ctx.author.send('Suggestion has been revoked.')
+
+    @commands.command()
     @is_council()
     async def show(self, ctx, suggestion: SuggestionConverter):
         """Show a suggestion's emoji."""
