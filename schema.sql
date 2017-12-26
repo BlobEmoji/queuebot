@@ -1,5 +1,8 @@
 -- migration compat, remove when suitable time has passed
 ALTER TABLE IF EXISTS suggestions
+    -- emoji data
+    ADD COLUMN IF NOT EXISTS emoji_animated BOOLEAN,
+
     -- timestamps
     ADD COLUMN IF NOT EXISTS submission_time TIMESTAMP, -- when this was submitted
     ADD COLUMN IF NOT EXISTS validation_time TIMESTAMP, -- when this was approved or denied
@@ -35,6 +38,7 @@ CREATE TABLE IF NOT EXISTS suggestions (
     -- emoji data
     emoji_id BIGINT,
     emoji_name TEXT,
+    emoji_animated BOOLEAN,
 
     -- votes
     upvotes INT DEFAULT 0,
