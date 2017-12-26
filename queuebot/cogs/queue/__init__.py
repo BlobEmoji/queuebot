@@ -211,7 +211,7 @@ class BlobQueue(Cog):
         await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
 
     @commands.command()
-    @is_police()
+    @is_council()
     async def deny(self, ctx, suggestion: SuggestionConverter, *, reason=None):
         """Denies an emoji that is currently in the council queue."""
         logger.info('%s: Denying %s.', ctx.author, suggestion)
