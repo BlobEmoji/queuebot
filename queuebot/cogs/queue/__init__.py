@@ -59,6 +59,7 @@ class BlobQueue(Cog):
 
         if not message.attachments:
             await message.delete()
+            logger.info(f"A suggestion by {message.author.id} was rejected because it had no attachments.")
             await respond(BAD_SUGGESTION_MSG)
             return
 
@@ -66,6 +67,7 @@ class BlobQueue(Cog):
 
         if not attachment.filename.endswith(('.png', '.jpg')):
             await message.delete()
+            logger.info(f"A suggestion by {message.author.id} was rejected because it was in an unsupported format.")
             await respond(BAD_SUGGESTION_MSG)
             return
 
@@ -80,6 +82,7 @@ class BlobQueue(Cog):
             await message.delete()
 
             log = self.bot.get_channel(config.bot_log)
+            logger.info(f"A suggestion by {message.author.id} was not processed due to lack of emoji or guild slots.")
             await log.send('Couldn\'t process suggestion due to having no free emoji or guild slots!')
 
             return await message.author.send(BOT_BROKEN_MSG)
@@ -95,6 +98,8 @@ class BlobQueue(Cog):
         emoji = await guild.create_custom_emoji(
             name=name, image=buffer.read(), reason='new blob suggestion'
         )
+
+        logger.info(f"Created new emoji by name {name} in guild {guild.id}.")
 
         buffer.seek(0)  # seek back again for test image impl
 
@@ -188,6 +193,7 @@ class BlobQueue(Cog):
         if guild is not None:
             return guild
 
+        logger.info("Creating new buffer emoji guild..")
         return await self.bot.create_guild('BlobQueue Emoji Buffer')
 
     @commands.command()
@@ -311,6 +317,7 @@ class BlobQueue(Cog):
     @staticmethod
     def test_backend(emoji_image: Image.Image):
         """Produce theme testing image for a given emoji."""
+        logger.info("Producing a static test image...")
         max_dimension = max(emoji_image.size)
         scalar = 128 / max_dimension
         new_sizing = int(emoji_image.width * scalar), int(emoji_image.height * scalar)
