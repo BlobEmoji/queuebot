@@ -10,9 +10,9 @@ ALTER TABLE IF EXISTS suggestions
     ADD COLUMN IF NOT EXISTS forced_by BIGINT, -- ID of the user who forced this. if not forced, this is NULL.
 
     -- message ids
-    ADD COLUMN IF NOT EXISTS suggestions_message_id BIGINT -- ID of the message ID in the suggestions queue
+    ADD COLUMN IF NOT EXISTS suggestions_message_id BIGINT, -- ID of the message ID in the suggestions queue
 
-    ADD COLUMN IF NOT EXISTS revoked BOOLEAN, -- emoji was revoked by submitter
+    ADD COLUMN IF NOT EXISTS revoked BOOLEAN -- emoji was revoked by submitter
 ;
 
 
