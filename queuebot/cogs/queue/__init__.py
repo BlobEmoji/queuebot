@@ -65,7 +65,7 @@ class BlobQueue(Cog):
 
         attachment = message.attachments[0]
 
-        if not attachment.filename.endswith(('.png', '.jpg')):
+        if not attachment.filename.endswith(('.png', '.jpg', '.gif')):
             await message.delete()
             logger.info(f"A suggestion by {message.author.id} was rejected because it was in an unsupported format.")
             await respond(BAD_SUGGESTION_MSG)
@@ -108,8 +108,9 @@ class BlobQueue(Cog):
         except OSError:
             queue_file = None  # fallback
         else:
-            test_image_buffer = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
-            queue_file = discord.File(fp=test_image_buffer, filename="example.png")
+            queue_file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
+
+        animated = queue_file.filename.endswith(".gif")
 
         queue = self.bot.get_channel(config.council_queue)
         msg = await queue.send(emoji, file=queue_file)
@@ -124,10 +125,11 @@ class BlobQueue(Cog):
                 emoji_id,
                 emoji_name,
                 submission_time,
-                suggestions_message_id
+                suggestions_message_id,
+                emoji_animated
             )
             VALUES (
-                $1, $2, $3, $4, $5, $6
+                $1, $2, $3, $4, $5, $6, $7
             )
             RETURNING idx
             """,
@@ -136,7 +138,8 @@ class BlobQueue(Cog):
             emoji.id,
             name,
             message.created_at,
-            message.id
+            message.id,
+            animated
         )
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
@@ -315,9 +318,7 @@ class BlobQueue(Cog):
         await ctx.send(embed=embed)
 
     @staticmethod
-    def test_backend(emoji_image: Image.Image):
-        """Produce theme testing image for a given emoji."""
-        logger.info("Producing a static test image...")
+    def generate_test_frame(emoji_image: Image.Image):
         max_dimension = max(emoji_image.size)
         scalar = 128 / max_dimension
         new_sizing = int(emoji_image.width * scalar), int(emoji_image.height * scalar)
@@ -330,19 +331,43 @@ class BlobQueue(Cog):
             larger = bounding.resize((64, 64), Image.ANTIALIAS)
             smaller = bounding.resize((44, 44), Image.ANTIALIAS)
 
-        with Image.open(path.join(path.dirname(__file__), "test_base.png")) as background_im:
-            background_im.paste(smaller, (346, 68), mask=smaller)
-            background_im.paste(larger, (137, 169), mask=larger)
+        background_im = Image.open(path.join(path.dirname(__file__), "test_base.png"))
 
-            background_im.paste(smaller, (348, 331), mask=smaller)
-            background_im.paste(larger, (139, 432), mask=larger)
+        background_im.paste(smaller, (346, 68), mask=smaller)
+        background_im.paste(larger, (137, 169), mask=larger)
 
-            final_buffer = BytesIO()
-            background_im.resize((410, 259), Image.ANTIALIAS).save(final_buffer, "png")
+        background_im.paste(smaller, (348, 331), mask=smaller)
+        background_im.paste(larger, (139, 432), mask=larger)
 
-        final_buffer.seek(0)
+        return background_im.resize((410, 259), Image.ANTIALIAS)
 
-        return final_buffer
+    def test_backend(self, emoji_image: Image.Image):
+        """Produce theme testing image for a given emoji."""
+        logger.info("Producing a test image...")
+        buffer = BytesIO()
+
+        frame_listing = []
+
+        interval = emoji_image.info.get("duration")
+
+        for _ in range(600):  # never render more than 600 frames
+            frame_listing.append(self.generate_test_frame(emoji_image))
+
+            try:
+                emoji_image.seek(emoji_image.tell() + 1)
+            except EOFError:
+                break
+
+        initial_frame = frame_listing.pop(0)
+
+        if frame_listing:
+            initial_frame.save(buffer, "gif", duration=interval, save_all=True, append_images=frame_listing, loop=0)
+            buffer.seek(0)
+            return discord.File(filename="test.gif", fp=buffer)
+        else:
+            initial_frame.save(buffer, "png")
+            buffer.seek(0)
+            return discord.File(filename="test.png", fp=buffer)
 
     @commands.command()
     @is_council()
@@ -374,8 +399,8 @@ class BlobQueue(Cog):
                                "<:blobthinkingfast:357765371962589185>")
                 return
 
-            rendered = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
-            await ctx.send(file=discord.File(rendered, filename=f'{suggestion[0]}.png'))
+            file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
+            await ctx.send(file=file)
 
     @commands.command(aliases=['sg'])
     @is_council()

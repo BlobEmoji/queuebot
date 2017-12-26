@@ -53,8 +53,12 @@ class Suggestion:
         return self.record['council_approved'] is False  # do not accept None
 
     @property
+    def is_animated(self):
+        return self.record["emoji_animated"] is True
+
+    @property
     def emoji_url(self):
-        return f'https://cdn.discordapp.com/emojis/{self.record["emoji_id"]}.png'
+        return f'https://cdn.discordapp.com/emojis/{self.record["emoji_id"]}.{"gif" if self.is_animated else "png"}'
 
     @property
     def status(self):
