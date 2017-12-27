@@ -211,7 +211,7 @@ class BlobQueue(Cog):
         await ctx.send(f'Current buffer guild: {guild.name} ({len(guild.emojis)}/50 full)')
 
     @commands.command()
-    @is_police()
+    @is_council()
     async def approve(self, ctx, suggestion: SuggestionConverter, *, reason=None):
         """Moves a suggestion from the council queue to the public queue."""
         logger.info('%s: Moving %s to public (approval) queue.', ctx.author, suggestion)
