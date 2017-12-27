@@ -168,6 +168,12 @@ Its basic structure is as follows:
 
   suggestions_log = 1234567890  # ID of the suggestions log channel
   council_changelog = 1234567890  # ID of the council changelog channel
+  
+  def should_approve(upvotes, downvotes): # Allow for a custom formula
+      return upvotes >= 10 and upvotes - downvotes >= 5 and upvotes + downvotes >= 15
+
+  def should_decline(upvotes, downvotes): # Allow for a custom formula
+      return downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15
 
 Substitute values here for your own.
 
