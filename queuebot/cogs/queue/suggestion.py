@@ -9,7 +9,7 @@ import discord
 import config
 from queuebot.utils import SUBMITTER_NOT_FOUND, UPLOADED_EMOJI_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, \
     name_id
-from config import suggestions_channel
+from config import suggestions_channel, should_approve, should_decline
 
 log = logging.getLogger(__name__)
 
@@ -303,7 +303,7 @@ Status: {status}
         downvotes = self.record['downvotes']
 
         # This logic is copied from b1nb0t.
-        if upvotes >= 10 and upvotes - downvotes >= 5 and upvotes + downvotes >= 15:
+        if should_approve(upvotes, downvotes): # Allow for custom formula in config
             # Since we don't track internal queue/public queue votes separately, we'll have to reset the upvotes
             # and downvotes columns.
             await self.db.execute(
@@ -312,7 +312,7 @@ Status: {status}
             await self.update_inplace()
 
             await self.move_to_public_queue()
-        elif downvotes >= 10 and downvotes - upvotes >= 5 and upvotes + downvotes >= 15:
+        elif should_decline(upvotes, downvotes): # Allow for custom formula in config
             await self.deny()
 
     async def delete_from_suggestions_channel(self):
