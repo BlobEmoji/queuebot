@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import functools
 import io
 import logging
 import re
@@ -21,6 +22,10 @@ from queuebot.utils.messages import *
 
 # Matches the full string or the name of a custom emoji (since replacements for those might be posted).
 NAME_RE = re.compile(r'(\w{1,32}):?\d?')
+
+# Matches all characters that can't be an emoji name
+SAFETY_RE = re.compile(r'[^a-zA-Z0-9_]')
+clean_emoji_name = functools.partial(SAFETY_RE.sub, "_")
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +101,7 @@ class BlobQueue(Cog):
             name = attachment.filename[:36][:-4]
 
         emoji = await guild.create_custom_emoji(
-            name=name, image=buffer.read(), reason='new blob suggestion'
+            name=clean_emoji_name(name), image=buffer.read(), reason='new blob suggestion'
         )
 
         logger.info(f"Created new emoji by name {name} in guild {guild.id}.")
@@ -231,6 +236,64 @@ class BlobQueue(Cog):
         await self.bot.log(f"<:{config.deny_emoji}> Suggestion #{suggestion.idx} force denied by "
                            f"{ctx.author.mention} ({ctx.author.id})")
         await ctx.send(f"Successfully denied #{suggestion.idx}.")
+
+    @commands.command()
+    @is_council()
+    async def vs(self, ctx, first: SuggestionConverter, second: SuggestionConverter):
+        """Creates VS vote between two emoji in the public queue."""
+        if first == second:
+            await ctx.send("Can't do VS vote on the same submission.")
+            return
+
+        not_in_public = [s.idx for s in (first, second) if not s.is_in_public_queue]
+        if not_in_public:
+            await ctx.send("\n".join(f"#{x} is not in the public queue." for x in not_in_public))
+            return
+
+        async with ctx.typing():
+
+            temp_emotes = []
+            for direction, sugg in (('left', first), ('right', second)):
+                buffer_guild = await self.get_buffer_guild()
+                emoji_name = clean_emoji_name(f"{sugg.emoji_name[0:26]}_{direction}")
+
+                async with self.bot.session.get(sugg.emoji_url) as resp:
+                    temp_emotes.append(await buffer_guild.create_custom_emoji(
+                        name=emoji_name, image=await resp.read(), reason='temp blob for vs'
+                    ))
+
+        await ctx.send(f"Are you sure you want to do a VS vote between #{first.idx} and #{second.idx}? "
+                       f"(`confirm` or `cancel`)\nIt will look like this:")
+        await ctx.send(f"{temp_emotes[0]}\N{SQUARED VS}{temp_emotes[1]}")
+
+        def wait_check(msg):
+            return msg.author.id == ctx.author.id and msg.content.lower() in ('confirm', 'cancel')
+
+        try:
+            validate_message = await self.bot.wait_for('message', check=wait_check, timeout=30)
+        except asyncio.TimeoutError:
+            await ctx.send("Timed out, not creating VS vote.")
+            return
+        else:
+            if validate_message.content.lower() == 'cancel':
+                await ctx.send("Cancelled.")
+                return
+
+        queue = self.bot.get_channel(config.approval_queue)
+
+        vs_message = await queue.send(f"{temp_emotes[0]}\N{SQUARED VS}{temp_emotes[1]}")
+        await vs_message.add_reaction(temp_emotes[0])
+        await vs_message.add_reaction(temp_emotes[1])
+
+        for emote in temp_emotes:
+            await emote.delete()
+
+        first_a, first_d = await first.remove_from_public_queue()
+        second_a, second_d = await second.remove_from_public_queue()
+
+        await ctx.send(f"Successfully created VS vote. Before the merge:\n"
+                       f"#{first.idx} had {first_a} approves, {first_d} denies.\n"
+                       f"#{second.idx} had {second_a} approves, {second_d} denies.")
 
     @commands.command()
     @is_council()

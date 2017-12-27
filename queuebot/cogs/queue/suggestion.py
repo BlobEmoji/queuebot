@@ -2,6 +2,7 @@
 import datetime
 import enum
 import logging
+import typing
 
 import discord
 
@@ -44,6 +45,9 @@ class Suggestion:
         return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>'\
             .format(self.record)
 
+    def __eq__(self, other):
+        return self.idx == other.idx
+
     @property
     def idx(self):
         return self.record["idx"]
@@ -59,6 +63,14 @@ class Suggestion:
     @property
     def is_animated(self):
         return self.record["emoji_animated"] is True
+
+    @property
+    def emoji(self):
+        return self.bot.get_emoji(self.record['emoji_id'])
+
+    @property
+    def emoji_name(self):
+        return self.record["emoji_name"]
 
     @property
     def emoji_url(self):
@@ -198,6 +210,30 @@ Status: {status}
                 await user.send(SUGGESTION_APPROVED)
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
+
+    async def remove_from_public_queue(self) -> typing.Tuple[int, int]:
+        """Removes an entry from the public queue.
+        Returns tuple of approve & deny votes it received before deletion."""
+        if not self.is_in_public_queue:
+            raise self.OperationError(
+                f"Cannot remove #{self.idx} from public queue -- it is not in the public queue."
+            )
+
+        public_queue = self.bot.get_channel(config.approval_queue)
+        msg = await public_queue.get_message(self.record["public_message_id"])
+        if not msg:
+            raise self.OperationError(
+                f"Couldn't retrieve message for #{self.idx} from public queue."
+            )
+
+        approve_reaction = discord.utils.get(msg.reactions, emoji__id=config.approve_emoji_id)
+        deny_reaction = discord.utils.get(msg.reactions, emoji__id=config.deny_emoji_id)
+
+        approves = approve_reaction.count if approve_reaction else 0
+        denies = deny_reaction.count if deny_reaction else 0
+
+        await msg.delete()
+        return approves, denies
 
     async def deny(self, *, who=None, reason=None, revoke=False):
         """Denies this emoji."""
