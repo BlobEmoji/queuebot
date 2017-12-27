@@ -217,7 +217,9 @@ class BlobQueue(Cog):
         logger.info('%s: Moving %s to public (approval) queue.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.move_to_public_queue(who=ctx.author.id, reason=reason)
-        await ctx.send(f"Successfully moved #{suggestion.record['idx']}.")
+        await self.bot.log(f"<:{config.approve_emoji}> Suggestion #{suggestion.idx} force approved by "
+                           f"{ctx.author.mention} ({ctx.author.id})")
+        await ctx.send(f"Successfully moved #{suggestion.idx}.")
 
     @commands.command()
     @is_council()
@@ -226,7 +228,9 @@ class BlobQueue(Cog):
         logger.info('%s: Denying %s.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.deny(who=ctx.author.id, reason=reason)
-        await ctx.send(f"Successfully denied #{suggestion.record['idx']}.")
+        await self.bot.log(f"<:{config.deny_emoji}> Suggestion #{suggestion.idx} force denied by "
+                           f"{ctx.author.mention} ({ctx.author.id})")
+        await ctx.send(f"Successfully denied #{suggestion.idx}.")
 
     @commands.command()
     @is_council()
@@ -313,7 +317,7 @@ class BlobQueue(Cog):
     @is_council()
     async def show(self, ctx, suggestion: SuggestionConverter):
         """Show a suggestion's emoji."""
-        embed = discord.Embed(title=f'Suggestion {suggestion.record["idx"]}')
+        embed = discord.Embed(title=f'Suggestion {suggestion.idx}')
         embed.set_image(url=suggestion.emoji_url)
         await ctx.send(embed=embed)
 
@@ -430,7 +434,7 @@ class BlobQueue(Cog):
                 status = 'CQ'
 
             table.add_row(
-                str(s.record['idx']), ':' + s.record['emoji_name'] + ':', submitted_by,
+                str(s.idx), ':' + s.record['emoji_name'] + ':', submitted_by,
                 f'▲ {s.record["upvotes"]} / ▼ {s.record["downvotes"]}',
                 status
             )

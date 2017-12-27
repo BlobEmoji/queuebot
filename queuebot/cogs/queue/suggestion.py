@@ -45,6 +45,10 @@ class Suggestion:
             .format(self.record)
 
     @property
+    def idx(self):
+        return self.record["idx"]
+
+    @property
     def is_in_public_queue(self):
         return self.record['council_approved'] is True
 
