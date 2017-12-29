@@ -41,7 +41,7 @@ SUGGESTION_RECIEVED = (
 SUGGESTION_APPROVED = (
     'Looks like one of your emoji suggestions was '
     'passed through our internal queue! Check out <#298920394751082507> to see '
-    'which it was and go vote for you suggestion in <#289847856033169409>!'
+    'which it was and go vote for your suggestion in <#289847856033169409>!'
 )
 
 SUGGESTION_DENIED = (
