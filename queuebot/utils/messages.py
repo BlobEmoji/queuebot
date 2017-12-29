@@ -5,7 +5,7 @@
 __all__ = (
     'BOT_BROKEN_MSG',
     'BAD_SUGGESTION_MSG',
-    'SUGGESTION_RECIEVED',
+    'SUGGESTION_RECEIVED',
     'SUGGESTION_APPROVED',
     'SUGGESTION_DENIED',
     'UPLOADED_EMOJI_NOT_FOUND',
@@ -31,7 +31,7 @@ BAD_SUGGESTION_MSG = (
     'free to try again, and if you are still having problems ask in <#289482554250100736>'
 )
 
-SUGGESTION_RECIEVED = (
+SUGGESTION_RECEIVED = (
     'Thanks for your emoji submission to the '
     'Google Blob Server! It\'s been added to our internal vote queue, '
     'so expect an update soon! Your suggestion was left in the channel as a '

@@ -114,7 +114,7 @@ Status: {status}
         This method is also called for public queue votes, but we do not check those votes, only tally them.
         """
         log.debug(
-            'Processsing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d)',
+            'Processing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d)',
             self, vote_emoji, vote_type.operator, message_id
         )
 
@@ -189,8 +189,8 @@ Status: {status}
         await self.delete_from_council_queue()
         await self.delete_from_suggestions_channel()
 
-        # Update this suggestion's row in the databse to reflect the move to the public queue.
-        log.info('Setting public_messsage_id -> %d', msg.id)
+        # Update this suggestion's row in the database to reflect the move to the public queue.
+        log.info('Setting public_message_id -> %d', msg.id)
         await self.db.execute(
             """
             UPDATE suggestions

@@ -157,7 +157,7 @@ class BlobQueue(Cog):
         )
 
         await message.add_reaction('\N{EYES}')
-        await respond(SUGGESTION_RECIEVED)
+        await respond(SUGGESTION_RECEIVED)
 
     async def on_raw_reaction_add(self, emoji: discord.PartialReactionEmoji, message_id: int,
                                   channel_id: int, user_id: int):
