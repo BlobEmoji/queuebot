@@ -304,9 +304,11 @@ Status: {status}
         """
         upvotes = self.record['upvotes']
         downvotes = self.record['downvotes']
+
         if upvotes + downvotes < required_votes:
-            # It doesn't hit the required votes, lets just exit out of the function, right?
+            # Total number of votes doesn't meet the threshold, no point taking any further action.
             return
+
         if upvotes - downvotes >= required_difference:
             # Since we don't track internal queue/public queue votes separately, we'll have to reset the upvotes
             # and downvotes columns.
@@ -316,6 +318,7 @@ Status: {status}
             await self.update_inplace()
 
             await self.move_to_public_queue()
+
         elif downvotes - upvotes >= required_difference:
             await self.deny()
 

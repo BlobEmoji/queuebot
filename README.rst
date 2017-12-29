@@ -120,7 +120,7 @@ To create a new database and user, use the following commands:
 
 Once these commands have completed, type ``\c mydb myuser`` into psql. It will prompt you for the password, enter the one you just created.
 
-Create a new suggestions table as in `schema.sql <https://github.com/slice/queuebot/blob/master/schema.sql>`__.
+Create a new suggestions table as in `schema.sql <https://github.com/BlobEmoji/queuebot/blob/master/schema.sql>`__.
 
 In Linux you can do this quickly by doing ``psql -d mydb -U myuser < schema.sql`` on the command line.
 
@@ -131,9 +131,7 @@ config.py
 
 A ``config.py`` file should be placed in the project root, alongside ``run.py``.
 
-The example config is at ``config.example.py``.
-
-Substitute values here for your own.
+You can find an example of how to create this config by referencing `config.example.py <https://github.com/BlobEmoji/queuebot/blob/master/config.example.py>`__.
 
 libuv
 #####

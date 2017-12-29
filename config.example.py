@@ -1,12 +1,12 @@
 token = "mytoken"
 
 pg_credentials = {
-  "host": "localhost",
-  "port": 5432,
-  "user": "myuser",
-  "database": "mydb",
-  "password": "mypassword",
-  "timeout": 60
+    "host": "localhost",
+    "port": 5432,
+    "user": "myuser",
+    "database": "mydb",
+    "password": "mypassword",
+    "timeout": 60
 }
 
 bot_log = 1234567890  # replace this with the ID of your bot logging channel
@@ -32,5 +32,5 @@ approval_queue = 1234567890  # ID of the approval queue channel
 suggestions_log = 1234567890  # ID of the suggestions log channel
 council_changelog = 1234567890  # ID of the council changelog channel
   
-required_difference = 15 # The difference between upvotes and downvotes required to approve/deny automatically
-required_votes = 15 # The amount of votes needed to process the votes
+required_difference = 5  # The majority required to reach a conclusive council vote.
+required_votes = 15  # The minimum amount of votes required to make a conclusive council vote.
