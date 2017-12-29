@@ -80,6 +80,14 @@ class Suggestion:
         return f'https://cdn.discordapp.com/emojis/{self.record["emoji_id"]}.{"gif" if self.is_animated else "png"}'
 
     @property
+    def upvotes(self):
+        return self.record["upvotes"]
+
+    @property
+    def downvotes(self):
+        return self.record["downvotes"]
+
+    @property
     def status(self):
         """Returns a human-friendly representation of this suggestion."""
         if self.is_denied:
@@ -214,29 +222,16 @@ Status: {status}
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
 
-    async def remove_from_public_queue(self) -> typing.Tuple[int, int]:
-        """Removes an entry from the public queue.
-        Returns tuple of approve & deny votes it received before deletion."""
-        if not self.is_in_public_queue:
-            raise self.OperationError(
-                f"Cannot remove #{self.idx} from public queue -- it is not in the public queue."
-            )
+    async def remove_from_public_queue(self):
+        """Removes an entry from the public queue."""
 
         public_queue = self.bot.get_channel(config.approval_queue)
-        msg = await public_queue.get_message(self.record["public_message_id"])
-        if not msg:
-            raise self.OperationError(
-                f"Couldn't retrieve message for #{self.idx} from public queue."
-            )
-
-        approve_reaction = discord.utils.get(msg.reactions, emoji__id=config.approve_emoji_id)
-        deny_reaction = discord.utils.get(msg.reactions, emoji__id=config.deny_emoji_id)
-
-        approves = approve_reaction.count if approve_reaction else 0
-        denies = deny_reaction.count if deny_reaction else 0
+        try:
+            msg = await public_queue.get_message(self.record["public_message_id"])
+        except discord.NotFound:
+            return
 
         await msg.delete()
-        return approves, denies
 
     async def deny(self, *, who=None, reason=None, revoke=False):
         """Denies this emoji."""

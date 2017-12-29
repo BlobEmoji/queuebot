@@ -15,7 +15,7 @@ from discord.ext import commands
 import config
 from queuebot.checks import is_bot_admin, is_council, is_police
 from queuebot.cog import Cog
-from queuebot.cogs.queue.converters import SuggestionConverter, PartialSuggestionConverter
+from queuebot.cogs.queue.converters import SuggestionConverter, PartialSuggestionConverter, PublicQueueOrEmojiConverter
 from queuebot.cogs.queue.suggestion import Suggestion
 from queuebot.utils.formatting import name_id, Table
 from queuebot.utils.messages import *
@@ -241,32 +241,39 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council()
-    async def vs(self, ctx, first: SuggestionConverter, second: SuggestionConverter):
+    @commands.cooldown(1, 15, commands.BucketType.guild)  # shouldn't be a requirement, acts as failsafe
+    async def vs(self, ctx, *emoji: PublicQueueOrEmojiConverter):
         """Creates VS vote between two emoji in the public queue."""
-        if first == second:
-            await ctx.send("Can't do VS vote on the same submission.")
+        if len(emoji) < 2:
+            await ctx.send("Need at least 2 emoji to do VS vote.")
             return
 
-        not_in_public = [s.idx for s in (first, second) if not s.is_in_public_queue]
-        if not_in_public:
-            await ctx.send("\n".join(f"#{x} is not in the public queue." for x in not_in_public))
+        if len(emoji) > 6:
+            await ctx.send("Refusing to do VS vote of greater than 6 emoji.")
+            return
+
+        id_set = set(x[1] for x in emoji)
+        if len(id_set) < len(emoji):
+            await ctx.send("Can't have a VS vote with the same emoji appearing more than once.")
             return
 
         async with ctx.typing():
 
             temp_emotes = []
-            for direction, sugg in (('left', first), ('right', second)):
+            for index, this_emoji in enumerate(emoji):
                 buffer_guild = await self.get_buffer_guild()
-                emoji_name = clean_emoji_name(f"{sugg.emoji_name[0:26]}_{direction}")
+                emoji_name = clean_emoji_name(f"{this_emoji[3][0:30]}_{index+1}")
 
-                async with self.bot.session.get(sugg.emoji_url) as resp:
+                async with self.bot.session.get(this_emoji[2]) as resp:
                     temp_emotes.append(await buffer_guild.create_custom_emoji(
                         name=emoji_name, image=await resp.read(), reason='temp blob for vs'
                     ))
 
-        await ctx.send(f"Are you sure you want to do a VS vote between #{first.idx} and #{second.idx}? "
+        emote_sequence = " \N{SQUARED VS} ".join(map(str, temp_emotes))
+
+        await ctx.send(f"Are you sure you want to do a VS vote between these emoji? "
                        f"(`confirm` or `cancel`)\nIt will look like this:")
-        await ctx.send(f"{temp_emotes[0]}\N{SQUARED VS}{temp_emotes[1]}")
+        await ctx.send(emote_sequence)
 
         def wait_check(msg):
             return msg.author.id == ctx.author.id and msg.content.lower() in ('confirm', 'cancel')
@@ -283,19 +290,23 @@ class BlobQueue(Cog):
 
         queue = self.bot.get_channel(config.approval_queue)
 
-        vs_message = await queue.send(f"{temp_emotes[0]}\N{SQUARED VS}{temp_emotes[1]}")
-        await vs_message.add_reaction(temp_emotes[0])
-        await vs_message.add_reaction(temp_emotes[1])
+        vs_message = await queue.send(emote_sequence)
+        for this_emoji in temp_emotes:
+            await vs_message.add_reaction(this_emoji)
+            await this_emoji.delete()
 
-        for emote in temp_emotes:
-            await emote.delete()
+        merge_list = []
 
-        first_a, first_d = await first.remove_from_public_queue()
-        second_a, second_d = await second.remove_from_public_queue()
+        for this_emoji in emoji:
+            suggestion = this_emoji[0]
+            if not suggestion:
+                continue
+            merge_list.append(f"#{suggestion.idx} had {suggestion.upvotes} upvotes, {suggestion.downvotes} downvotes.")
+            await suggestion.remove_from_public_queue()
 
-        await ctx.send(f"Successfully created VS vote. Before the merge:\n"
-                       f"#{first.idx} had {first_a} approves, {first_d} denies.\n"
-                       f"#{second.idx} had {second_a} approves, {second_d} denies.")
+        merge_format = "\n".join(merge_list)
+
+        await ctx.send(f"Successfully created VS vote.\n{merge_format}")
 
     @commands.command()
     @is_council()
