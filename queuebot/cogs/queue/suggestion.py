@@ -304,7 +304,7 @@ Status: {status}
         """
         upvotes = self.record['upvotes']
         downvotes = self.record['downvotes']
-        if upvotes + downvotes <= required_votes:
+        if upvotes + downvotes < required_votes:
             # It doesn't hit the required votes, lets just exit out of the function, right?
             return
         if upvotes - downvotes >= required_difference:
