@@ -329,7 +329,7 @@ class BlobQueue(Cog):
     @is_council()
     async def status(self, ctx, suggestion: SuggestionConverter):
         """Views the status of a submission."""
-        await ctx.send(suggestion.status)
+        await ctx.send(embed=suggestion.embed)
         return
 
     @commands.command()

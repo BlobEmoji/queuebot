@@ -88,8 +88,34 @@ class Suggestion:
         return self.record["downvotes"]
 
     @property
+    def embed(self):
+        if self.is_denied:
+            color = discord.Color.red()
+        elif self.is_in_public_queue:
+            color = discord.Color.green()
+        else:
+            color = discord.Color.blue()
+
+        embed = discord.Embed(title=f'Suggestion #{self.record["idx"]} :{self.record["emoji_name"]}:',
+                              color=color, description=self.status)
+        embed.set_thumbnail(url=f'https://cdn.discordapp.com/emojis/{self.record["emoji_id"]}.png')
+        embed.add_field(name='Score', value=f'\N{BLACK UP-POINTING TRIANGLE} {self.record["upvotes"]} / '
+                                            f'\N{BLACK DOWN-POINTING TRIANGLE} {self.record["downvotes"]}')
+
+        submission_time = f'{self.record["submission_time"]} UTC' or 'Unknown submission time'
+        embed.add_field(name='Submitted', value=f'By <@{self.record["user_id"]}>\n{submission_time}')
+
+        if self.record['forced_by']:
+            verdict = 'Denial' if self.is_denied else 'Approval' if self.is_in_public_queue else '...'
+
+            embed.add_field(name=f'Forced {verdict}', value=f'<@{self.record["forced_by"]}>\n'
+                                                            f'Reason: "{self.record["forced_reason"]}"', inline=False)
+
+        return embed
+
+    @property
     def status(self):
-        """Returns a human-friendly representation of this suggestion."""
+        """Returns a human-friendly representation of where this suggestion is at now."""
         if self.is_denied:
             if self.record["validation_time"]:
                 status = f'Denied at {self.record["validation_time"]} UTC'
@@ -97,25 +123,14 @@ class Suggestion:
                 status = "Denied"
         elif self.is_in_public_queue:
             if self.record["validation_time"]:
-                status = f'Moved to public queue at {self.record["validation_time"]} UTC'
+                status = f'Moved to public approval queue at {self.record["validation_time"]} UTC'
             else:
                 status = 'In the public approval queue'
         else:
             status = 'In the private council queue'
 
-        submission_time = self.record["submission_time"] or "Unknown time"
+        return status
 
-        if self.record["forced_by"]:
-            force_text = f"Forced by: <@{self.record['forced_by']}>\nReason: {self.record['forced_reason']}"
-        else:
-            force_text = ""
-
-        return f"""**Suggestion #{self.record['idx']}**
-
-Submitted by <@{self.record['user_id']}> at {submission_time} UTC
-Upvotes: **{self.record['upvotes']}** / Downvotes: **{self.record['downvotes']}**
-Status: {status}
-{force_text}"""
 
     async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
         """
