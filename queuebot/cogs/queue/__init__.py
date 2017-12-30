@@ -51,6 +51,7 @@ class BlobQueue(Cog):
         Suggestion.bot = bot
 
         self.voting_lock = asyncio.Lock()
+        self.vs_lock = asyncio.Lock()
 
     async def on_message(self, message: discord.Message):
         if message.channel.id != config.suggestions_channel or message.author == self.bot.user:
@@ -241,72 +242,87 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council()
-    @commands.cooldown(1, 15, commands.BucketType.guild)  # shouldn't be a requirement, acts as failsafe
     async def vs(self, ctx, *emoji: PublicQueueOrEmojiConverter):
         """Creates VS vote between two emoji in the public queue."""
-        if len(emoji) < 2:
-            await ctx.send("Need at least 2 emoji to do VS vote.")
+        if self.vs_lock.locked():
+            await ctx.send("A VS command is already being run, or has been run too recently.")
             return
 
-        if len(emoji) > 6:
-            await ctx.send("Refusing to do VS vote of greater than 6 emoji.")
-            return
+        async with self.vs_lock:
 
-        id_set = set(x[1] for x in emoji)
-        if len(id_set) < len(emoji):
-            await ctx.send("Can't have a VS vote with the same emoji appearing more than once.")
-            return
-
-        async with ctx.typing():
-
-            temp_emotes = []
-            for index, this_emoji in enumerate(emoji):
-                buffer_guild = await self.get_buffer_guild()
-                emoji_name = clean_emoji_name(f"{this_emoji[3][0:30]}_{index+1}")
-
-                async with self.bot.session.get(this_emoji[2]) as resp:
-                    temp_emotes.append(await buffer_guild.create_custom_emoji(
-                        name=emoji_name, image=await resp.read(), reason='temp blob for vs'
-                    ))
-
-        emote_sequence = " \N{SQUARED VS} ".join(map(str, temp_emotes))
-
-        await ctx.send(f"Are you sure you want to do a VS vote between these emoji? "
-                       f"(`confirm` or `cancel`)\nIt will look like this:")
-        await ctx.send(emote_sequence)
-
-        def wait_check(msg):
-            return msg.author.id == ctx.author.id and msg.content.lower() in ('confirm', 'cancel')
-
-        try:
-            validate_message = await self.bot.wait_for('message', check=wait_check, timeout=30)
-        except asyncio.TimeoutError:
-            await ctx.send("Timed out, not creating VS vote.")
-            return
-        else:
-            if validate_message.content.lower() == 'cancel':
-                await ctx.send("Cancelled.")
+            if len(emoji) < 2:
+                await ctx.send("Need at least 2 emoji to do VS vote.")
                 return
 
-        queue = self.bot.get_channel(config.approval_queue)
+            if len(emoji) > 6:
+                await ctx.send("Refusing to do VS vote of greater than 6 emoji.")
+                return
 
-        vs_message = await queue.send(emote_sequence)
-        for this_emoji in temp_emotes:
-            await vs_message.add_reaction(this_emoji)
-            await this_emoji.delete()
+            id_set = set(x[1] for x in emoji)
+            if len(id_set) < len(emoji):
+                await ctx.send("Can't have a VS vote with the same emoji appearing more than once.")
+                return
 
-        merge_list = []
+            async with ctx.typing():
 
-        for this_emoji in emoji:
-            suggestion = this_emoji[0]
-            if not suggestion:
-                continue
-            merge_list.append(f"#{suggestion.idx} had {suggestion.upvotes} upvotes, {suggestion.downvotes} downvotes.")
-            await suggestion.remove_from_public_queue()
+                temp_emotes = []
+                for index, this_emoji in enumerate(emoji):
+                    buffer_guild = await self.get_buffer_guild()
+                    emoji_name = clean_emoji_name(f"{this_emoji[3][0:30]}_{index+1}")
 
-        merge_format = "\n".join(merge_list)
+                    async with self.bot.session.get(this_emoji[2]) as resp:
+                        temp_emotes.append(await buffer_guild.create_custom_emoji(
+                            name=emoji_name, image=await resp.read(), reason='temp blob for vs'
+                        ))
 
-        await ctx.send(f"Successfully created VS vote.\n{merge_format}")
+            emote_sequence = " \N{SQUARED VS} ".join(map(str, temp_emotes))
+
+            await ctx.send(f"Are you sure you want to do a VS vote between these emoji? "
+                           f"(`confirm` or `cancel`)\nIt will look like this:")
+            await ctx.send(emote_sequence)
+
+            def wait_check(msg):
+                return msg.author.id == ctx.author.id and msg.content.lower() in ('confirm', 'cancel')
+
+            try:
+                validate_message = await self.bot.wait_for('message', check=wait_check, timeout=30)
+            except asyncio.TimeoutError:
+                await ctx.send("Timed out, not creating VS vote.")
+
+                for this_emoji in temp_emotes:
+                    await this_emoji.delete()
+
+                return
+            else:
+                if validate_message.content.lower() == 'cancel':
+                    await ctx.send("Cancelled.")
+
+                    for this_emoji in temp_emotes:
+                        await this_emoji.delete()
+
+                    return
+
+            queue = self.bot.get_channel(config.approval_queue)
+
+            vs_message = await queue.send(emote_sequence)
+            for this_emoji in temp_emotes:
+                await vs_message.add_reaction(this_emoji)
+                await this_emoji.delete()
+
+            merge_list = []
+
+            for this_emoji in emoji:
+                suggestion = this_emoji[0]
+                if not suggestion:
+                    continue
+                merge_list.append(f"#{suggestion.idx} had {suggestion.upvotes} upvotes, "
+                                  f"{suggestion.downvotes} downvotes.")
+                await suggestion.remove_from_public_queue()
+
+            merge_format = "\n".join(merge_list)
+
+            await ctx.send(f"Successfully created VS vote.\n{merge_format}")
+            await asyncio.sleep(5)  # add extra effect to the Lock
 
     @commands.command()
     @is_council()
