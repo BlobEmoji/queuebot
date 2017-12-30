@@ -98,7 +98,7 @@ class Suggestion:
 
         embed = discord.Embed(title=f'Suggestion #{self.record["idx"]} :{self.record["emoji_name"]}:',
                               color=color, description=self.status)
-        embed.set_thumbnail(url=f'https://cdn.discordapp.com/emojis/{self.record["emoji_id"]}.png')
+        embed.set_thumbnail(url=self.emoji_url)
         embed.add_field(name='Score', value=f'\N{BLACK UP-POINTING TRIANGLE} {self.record["upvotes"]} / '
                                             f'\N{BLACK DOWN-POINTING TRIANGLE} {self.record["downvotes"]}')
 
