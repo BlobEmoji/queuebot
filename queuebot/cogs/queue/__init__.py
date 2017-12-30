@@ -222,6 +222,7 @@ class BlobQueue(Cog):
         """Moves a suggestion from the council queue to the public queue."""
         logger.info('%s: Moving %s to public (approval) queue.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
+        await suggestion.reset_votes()
         await suggestion.move_to_public_queue(who=ctx.author.id, reason=reason)
         await self.bot.log(f"<:{config.approve_emoji}> Suggestion #{suggestion.idx} force approved by "
                            f"{ctx.author.mention} ({ctx.author.id})\n"

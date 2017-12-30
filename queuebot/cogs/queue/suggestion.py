@@ -290,6 +290,12 @@ Status: {status}
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji.')
 
+    async def reset_votes(self):
+        await self.db.execute(
+            'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.record['idx']
+        )
+        await self.update_inplace()
+
     async def check_council_votes(self):
         """
         Checks the amount of upvotes and downvotes for this suggestion, and performs a denial or transfer to the council
@@ -307,13 +313,8 @@ Status: {status}
         if upvotes - downvotes >= required_difference:
             # Since we don't track internal queue/public queue votes separately, we'll have to reset the upvotes
             # and downvotes columns.
-            await self.db.execute(
-                'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.record['idx']
-            )
-            await self.update_inplace()
-
+            await self.reset_votes()
             await self.move_to_public_queue()
-
         elif downvotes - upvotes >= required_difference:
             await self.deny()
 
