@@ -169,7 +169,8 @@ Status: {status}
         """Moves this suggestion to the public queue."""
         if self.is_in_public_queue:
             raise self.OperationError(
-                "Cannot move this suggestion to the public queue -- it is already in the public queue."
+                "Cannot move this suggestion to the public approval queue -- it is already in the public approval "
+                "queue. "
             )
 
         log.info('Moving %s to the public queue.', self)
