@@ -24,6 +24,12 @@ class PartialSuggestionConverter(commands.Converter):
             suggestion = await Suggestion.get_from_id(sugg_id)
             return suggestion.record["idx"], suggestion.emoji_url
         except (ValueError, Suggestion.NotFound):
+            try:
+                emoji = await commands.EmojiConverter().convert(ctx, argument)
+                return None, emoji.url
+            except commands.BadArgument:
+                pass
+            
             if argument.startswith(("http://", "https://")):
                 await ctx.channel.trigger_typing()
                 for _ in range(10):
