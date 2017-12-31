@@ -18,7 +18,7 @@ Prerequisites
 This project has a number of requirements for deployment:
 
 - ``git``, for acquiring ``discord.py@rewrite``
-- A PostgreSQL >=10 server to store suggestion data
+- A PostgreSQL >=9.6 server to store suggestion data
 - A ``config.py`` file containing configuration data
 - ``libuv`` to enable ``uvloop``
 - Python requirements as in `requirements.txt <https://github.com/slice/queuebot/blob/master/requirements.txt>`__
@@ -46,8 +46,8 @@ and in Arch-based systems:
 
   pacman -S git
 
-PostgreSQL >=10
-###############
+PostgreSQL >=9.6
+################
 
 Installation
 ++++++++++++

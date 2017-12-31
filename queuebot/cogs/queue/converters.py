@@ -29,7 +29,7 @@ class PartialSuggestionConverter(commands.Converter):
                 return None, emoji.url
             except commands.BadArgument:
                 pass
-            
+
             if argument.startswith(("http://", "https://")):
                 await ctx.channel.trigger_typing()
                 for _ in range(10):
