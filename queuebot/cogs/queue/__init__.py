@@ -21,7 +21,7 @@ from queuebot.utils.formatting import name_id, Table
 from queuebot.utils.messages import *
 
 # Matches the full string or the name of a custom emoji (since replacements for those might be posted).
-NAME_RE = re.compile(r'(\w{1,32}):?\d?')
+NAME_RE = re.compile(r'(\w{2,32}):?\d?')
 
 # Matches all characters that can't be an emoji name
 SAFETY_RE = re.compile(r'[^a-zA-Z0-9_]')
