@@ -2,7 +2,6 @@
 import datetime
 import enum
 import logging
-import typing
 
 import discord
 
@@ -130,7 +129,6 @@ class Suggestion:
             status = 'In the private council queue'
 
         return status
-
 
     async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
         """

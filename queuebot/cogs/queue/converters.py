@@ -36,7 +36,7 @@ class PartialSuggestionConverter(commands.Converter):
                     await asyncio.sleep(0.5)
                     if ctx.message.embeds and ctx.message.embeds[0].thumbnail:
                         return None, ctx.message.embeds[0].thumbnail.proxy_url
-            
+
             raise commands.BadArgument("Couldn't resolve to suggestion or image.") from None
 
 

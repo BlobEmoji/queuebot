@@ -13,12 +13,12 @@ from PIL import Image
 from discord.ext import commands
 
 import config
-from queuebot.checks import is_bot_admin, is_council, is_police
+from queuebot.checks import is_bot_admin, is_council
 from queuebot.cog import Cog
 from queuebot.cogs.queue.converters import SuggestionConverter, PartialSuggestionConverter, PublicQueueOrEmojiConverter
 from queuebot.cogs.queue.suggestion import Suggestion
 from queuebot.utils.formatting import name_id, Table
-from queuebot.utils.messages import *
+from queuebot.utils.messages import *  # noqa: ignore=F401
 
 # Matches the full string or the name of a custom emoji (since replacements for those might be posted).
 NAME_RE = re.compile(r'(\w{2,32}):?\d?')

@@ -1,0 +1,27 @@
+[flake8]
+ignore = # don't complain about star (*) imports
+         F403,
+	     # don't complain about untraceable star import variables
+	     F405
+max-line-length = 120
+exclude = .git,
+          .cache,
+          .circleci,
+          .github,
+          .idea,
+          .vscode,
+          __pycache__,
+          config.example.py,
+          config.py,
+          .env,
+          .venv,
+          env,
+          venv,
+          env.bak,
+          venv.bak,
+          .DS_Store,
+          .python-version,
+          .tox,
+          build,
+          dist,
+          .pyc
