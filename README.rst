@@ -1,10 +1,24 @@
 QueueBot
 ========
 
-.. image:: https://img.shields.io/badge/python-3.6-blue.svg
+.. |py3| image:: https://img.shields.io/badge/python-3.6-blue.svg
 
-.. image:: https://img.shields.io/badge/License-MIT-blue.svg
-  :target: https://github.com/slice/queuebot/blob/master/LICENSE
+.. |license| image:: https://img.shields.io/badge/License-MIT-blue.svg
+  :target: https://github.com/BlobEmoji/queuebot/blob/master/LICENSE
+
+.. |travis| image:: https://img.shields.io/travis/BlobEmoji/queuebot/master.svg?label=TravisCI
+  :target: https://travis-ci.org/BlobEmoji/queuebot
+
+.. |circleci| image:: https://img.shields.io/circleci/project/github/BlobEmoji/queuebot/master.svg?label=CircleCI
+  :target: https://circleci.com/gh/BlobEmoji/queuebot
+
+.. |issues| image:: https://img.shields.io/github/issues/BlobEmoji/queuebot.svg?colorB=3333ff
+  :target: https://github.com/BlobEmoji/queuebot/issues
+
+.. |commits| image:: https://img.shields.io/github/commit-activity/w/BlobEmoji/queuebot.svg
+  :target: https://github.com/BlobEmoji/queuebot/commits
+
+|py3| |license| |travis| |circleci| |issues| |commits|
 
 QueueBot manages suggestion queueing and approval for the Google Emoji Discord guild.
 It requires Python >=3.6 and the `discord.py@rewrite <https://github.com/Rapptz/discord.py/tree/rewrite/>`__ library.
