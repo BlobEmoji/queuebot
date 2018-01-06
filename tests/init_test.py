@@ -66,7 +66,7 @@ async def main():
         f"<Suggestion idx={idx} user_id=123456789012345678 upvotes=0 downvotes=0>"
 
     queuecog = bot.get_cog("BlobQueue")
-    await queuecog.on_raw_reaction_add(discord.PartialReactionEmoji(name="ok", id=901234567890123456),
+    await queuecog.on_raw_reaction_add(discord.PartialEmoji(animated=False, name="ok", id=901234567890123456),
                                        234567890123456789, 98765432109876543, 234567890123456789)
 
     await suggestion.update_inplace()

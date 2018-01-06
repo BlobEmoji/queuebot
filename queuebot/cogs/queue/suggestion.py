@@ -130,7 +130,7 @@ class Suggestion:
 
         return status
 
-    async def process_vote(self, vote_emoji: discord.PartialReactionEmoji, vote_type: VoteType, message_id: int):
+    async def process_vote(self, vote_emoji: discord.PartialEmoji, vote_type: VoteType, message_id: int):
         """
         Processes a vote for this suggestion.
 

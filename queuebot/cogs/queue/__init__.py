@@ -30,7 +30,7 @@ clean_emoji_name = functools.partial(SAFETY_RE.sub, "_")
 logger = logging.getLogger(__name__)
 
 
-def is_vote(emoji: discord.PartialReactionEmoji, channel_id: int) -> bool:
+def is_vote(emoji: discord.PartialEmoji, channel_id: int) -> bool:
     """Checks whether an emoji is the approve or deny emoji and a channel is a suggestion processing channel."""
     if emoji.id is None:
         return False  # not a custom emoji
@@ -160,7 +160,7 @@ class BlobQueue(Cog):
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED)
 
-    async def on_raw_reaction_add(self, emoji: discord.PartialReactionEmoji, message_id: int,
+    async def on_raw_reaction_add(self, emoji: discord.PartialEmoji, message_id: int,
                                   channel_id: int, user_id: int):
         if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
             return
@@ -171,7 +171,7 @@ class BlobQueue(Cog):
             s = await Suggestion.get_from_message(message_id)
             await s.process_vote(emoji, Suggestion.VoteType.YAY, message_id)
 
-    async def on_raw_reaction_remove(self, emoji: discord.PartialReactionEmoji, message_id: int,
+    async def on_raw_reaction_remove(self, emoji: discord.PartialEmoji, message_id: int,
                                      channel_id: int, user_id: int):
         if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
             return
