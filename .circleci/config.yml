@@ -214,5 +214,5 @@ workflows:
   build:
     jobs:
       - "build and install 3.6"
-      # - "build and install 3.7"  # as of this time this test does not perform correctly
+      - "build and install 3.7"
       - "flake8"
