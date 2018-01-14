@@ -547,6 +547,7 @@ class BlobQueue(Cog):
         vote_records = await self.db.fetch("""
             SELECT * FROM council_votes
             WHERE $1::BIGINT IN (suggestion_index::BIGINT, user_id) AND TRUE IN (has_approved, has_denied)
+            ORDER BY vote_time DESC
             LIMIT 20
         """, which)
 

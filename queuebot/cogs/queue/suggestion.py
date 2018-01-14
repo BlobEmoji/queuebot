@@ -180,7 +180,6 @@ class Suggestion:
                 ON CONFLICT (suggestion_index, user_id)
                 DO UPDATE SET
                 {column} = FALSE
-                RETURNING has_approved, has_denied
                 """,
                 self.idx, who
             )
