@@ -54,3 +54,22 @@ CREATE TABLE IF NOT EXISTS suggestions (
     forced_by BIGINT, -- ID of the user who forced this. if not forced, this is NULL.
     revoked BOOLEAN -- emoji was revoked by submitter
 );
+
+CREATE TABLE IF NOT EXISTS council_votes (
+    -- idx of the suggestion this vote is for
+    suggestion_index INT REFERENCES suggestions ON DELETE CASCADE,
+
+    -- user that made this vote
+    user_id BIGINT,
+
+    PRIMARY KEY (suggestion_index, user_id),
+
+    -- has this user voted approve?
+    has_approved BOOLEAN DEFAULT FALSE,
+
+    -- has this user voted deny?
+    has_denied BOOLEAN DEFAULT FALSE,
+
+    -- time when this vote was made
+    vote_time TIMESTAMP DEFAULT (now() AT TIME ZONE 'utc')
+);
