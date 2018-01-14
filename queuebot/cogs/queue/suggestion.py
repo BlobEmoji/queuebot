@@ -95,7 +95,7 @@ class Suggestion:
         else:
             color = discord.Color.blue()
 
-        embed = discord.Embed(title=f'Suggestion #{self.record["idx"]} :{self.record["emoji_name"]}:',
+        embed = discord.Embed(title=f'Suggestion #{self.idx} :{self.record["emoji_name"]}:',
                               color=color, description=self.status)
         embed.set_thumbnail(url=self.emoji_url)
         embed.add_field(name='Score', value=f'\N{BLACK UP-POINTING TRIANGLE} {self.record["upvotes"]} / '
@@ -130,7 +130,7 @@ class Suggestion:
 
         return status
 
-    async def process_vote(self, vote_emoji: discord.PartialEmoji, vote_type: VoteType, message_id: int):
+    async def process_vote(self, vote_emoji: discord.PartialEmoji, vote_type: VoteType, message_id: int, who: int):
         """
         Processes a vote for this suggestion.
 
@@ -138,12 +138,13 @@ class Suggestion:
         This method is also called for public queue votes, but we do not check those votes, only tally them.
         """
         log.debug(
-            'Processing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d)',
-            self, vote_emoji, vote_type.operator, message_id
+            'Processing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d, who=%d)',
+            self, vote_emoji, vote_type.operator, message_id, who
         )
 
         # Calculate the column to modify depending on which emoji was reacted with.
-        vote_target = 'upvotes' if vote_emoji.id == config.approve_emoji_id else 'downvotes'
+        approval = vote_emoji.id == config.approve_emoji_id
+        vote_target = 'upvotes' if approval else 'downvotes'
 
         await self.db.execute(
             f"""
@@ -151,13 +152,37 @@ class Suggestion:
             SET {vote_target} = {vote_target} {vote_type.operator} 1
             WHERE idx = $1
             """,
-            self.record['idx']
+            self.idx
         )
         await self.update_inplace()
 
         if self.record['public_message_id'] is not None:
             # Don't process public votes. We still keep track of them, though.
             return
+
+        column = "has_approved" if approval else "has_denied"
+        if vote_type == vote_type.YAY:
+            await self.db.execute(
+                f"""
+                INSERT INTO council_votes (suggestion_index, user_id, {column}) VALUES
+                ($1, $2, TRUE)
+                ON CONFLICT (suggestion_index, user_id)
+                DO UPDATE SET
+                {column} = TRUE
+                """,
+                self.idx, who
+            )
+        else:
+            await self.db.execute(
+                f"""
+                INSERT INTO council_votes (suggestion_index, user_id, {column}) VALUES
+                ($1, $2, FALSE)
+                ON CONFLICT (suggestion_index, user_id)
+                DO UPDATE SET
+                {column} = FALSE
+                """,
+                self.idx, who
+            )
 
         await self.check_council_votes()
 
@@ -175,7 +200,7 @@ class Suggestion:
             UPDATE suggestions
             SET council_message_id = NULL
             WHERE idx = $1
-        """, self.record['idx'])
+        """, self.idx)
         await self.update_inplace()
 
     async def move_to_public_queue(self, *, who=None, reason=None):
@@ -226,7 +251,7 @@ class Suggestion:
             validation_time = $4
             WHERE idx = $5
             """,
-            msg.id, reason, who, datetime.datetime.utcnow(), self.record['idx']
+            msg.id, reason, who, datetime.datetime.utcnow(), self.idx
         )
         await self.update_inplace()
 
@@ -275,7 +300,7 @@ class Suggestion:
             validation_time = $3
             WHERE idx = $4
             """,
-            reason, who, datetime.datetime.utcnow(), self.record['idx']
+            reason, who, datetime.datetime.utcnow(), self.idx
         )
 
         if revoke:
@@ -285,7 +310,7 @@ class Suggestion:
                 SET revoked = TRUE
                 WHERE idx = $1
                 """,
-                self.record['idx']
+                self.idx
             )
 
         await self.update_inplace()
@@ -306,7 +331,7 @@ class Suggestion:
 
     async def reset_votes(self):
         await self.db.execute(
-            'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.record['idx']
+            'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.idx
         )
         await self.update_inplace()
 
@@ -348,7 +373,7 @@ class Suggestion:
             log.debug('Removed message %d from suggestions channel.', message.id)
         except discord.HTTPException:
             await self.bot.log(
-                f"\N{WARNING SIGN} Failed to delete suggestion #{self.record['idx']}'s message in "
+                f"\N{WARNING SIGN} Failed to delete suggestion #{self.idx}'s message in "
                 f"<#{suggestions_channel}>."
             )
             log.exception("Failed to delete %s\'s suggestion message ID:", self)
@@ -357,7 +382,7 @@ class Suggestion:
         """Updates the internal state of this suggestion from the Postgres database."""
         self.record = await self.db.fetchrow(
             'SELECT * FROM suggestions WHERE idx = $1',
-            self.record['idx']
+            self.idx
         )
         log.debug('Updated suggestion inplace. %s', self)
 

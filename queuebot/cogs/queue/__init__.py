@@ -169,7 +169,7 @@ class BlobQueue(Cog):
 
         async with self.voting_lock:
             s = await Suggestion.get_from_message(message_id)
-            await s.process_vote(emoji, Suggestion.VoteType.YAY, message_id)
+            await s.process_vote(emoji, Suggestion.VoteType.YAY, message_id, user_id)
 
     async def on_raw_reaction_remove(self, emoji: discord.PartialEmoji, message_id: int,
                                      channel_id: int, user_id: int):
@@ -180,7 +180,7 @@ class BlobQueue(Cog):
 
         async with self.voting_lock:
             s = await Suggestion.get_from_message(message_id)
-            await s.process_vote(emoji, Suggestion.VoteType.NAY, message_id)
+            await s.process_vote(emoji, Suggestion.VoteType.NAY, message_id, user_id)
 
     def has_emoji_slots(self, guild: discord.Guild) -> bool:
         return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
@@ -530,6 +530,43 @@ class BlobQueue(Cog):
                 str(s.idx), ':' + s.record['emoji_name'] + ':', submitted_by,
                 f'▲ {s.record["upvotes"]} / ▼ {s.record["downvotes"]}',
                 status
+            )
+
+        paginator = commands.Paginator()
+        for line in (await table.render(ctx.bot.loop)).split('\n'):
+            paginator.add_line(line)
+
+        for page in paginator.pages:
+            await ctx.send(page)
+
+    @commands.command(aliases=["vi"])
+    @is_council()
+    async def vote_info(self, ctx, which: int):
+        """Views voting info by suggestion or user ID"""
+
+        vote_records = await self.db.fetch("""
+            SELECT * FROM council_votes
+            WHERE $1::BIGINT IN (suggestion_index::BIGINT, user_id) AND TRUE IN (has_approved, has_denied)
+            ORDER BY vote_time DESC
+            LIMIT 20
+        """, which)
+
+        table = Table('Suggestion', 'User', 'Vote', 'When')
+        for record in vote_records:
+            suggestion_id = record['suggestion_index']
+
+            user = ctx.bot.get_user(record['user_id'])
+            voted_by = f'{user} {user.id}' if user else str(s.record['user_id'])
+
+            approve = record['has_approved']
+            deny = record['has_denied']
+
+            vote = "Both" if approve and deny else ("Yes" if approve else "No")
+
+            when = record["vote_time"].strftime("%Y-%m-%d %H:%M:%S UTC")
+
+            table.add_row(
+                str(suggestion_id), voted_by, vote, when
             )
 
         paginator = commands.Paginator()
