@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import functools
+import hashlib
 import io
 import logging
 import re
@@ -150,10 +151,12 @@ class BlobQueue(Cog):
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
         buffer.seek(0)
+        file_hash = hashlib.sha256(buffer.read()).hexdigest()
+        buffer.seek(0)
         log = self.bot.get_channel(config.suggestions_log)
         await log.send(
             (f'**Submission #{record["idx"]}**\n\n:{name}: by `{name_id(message.author)}`\n'
-             f'Filename: {attachment.filename}').replace('@', '@\u200b'),
+             f'Filename: {attachment.filename}\nHash: `{file_hash}`').replace('@', '@\u200b'),
             file=discord.File(buffer, filename=attachment.filename)
         )
 
