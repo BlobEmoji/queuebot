@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import config
 from discord.ext import commands
 
 
@@ -14,7 +13,7 @@ def is_police():
         if not ctx.guild:
             return False
 
-        return any(role.id in config.authority_roles for role in ctx.author.roles)
+        return any(role.id in ctx.bot.config.authority_roles for role in ctx.author.roles)
     return commands.check(predicate)
 
 

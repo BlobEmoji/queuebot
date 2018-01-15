@@ -33,7 +33,7 @@ This project has a number of requirements for deployment:
 
 - ``git``, for acquiring ``discord.py@rewrite``
 - A PostgreSQL >=9.6 server to store suggestion data
-- A ``config.py`` file containing configuration data
+- A ``config.yaml`` file containing configuration data
 - ``libuv`` to enable ``uvloop``
 - Python requirements as in `requirements.txt <https://github.com/slice/queuebot/blob/master/requirements.txt>`__
 
@@ -140,12 +140,12 @@ In Linux you can do this quickly by doing ``psql -d mydb -U myuser < schema.sql`
 
 Your setup for PostgreSQL is now done and you can log out of psql by typing ``\q``.
 
-config.py
-#########
+config.yaml
+###########
 
-A ``config.py`` file should be placed in the project root, alongside ``run.py``.
+A ``config.yaml`` file should be placed in the project root, alongside ``run.py``.
 
-You can find an example of how to create this config by referencing `config.example.py <https://github.com/BlobEmoji/queuebot/blob/master/config.example.py>`__.
+You can find an example of how to create this config by referencing `config.example.yaml <https://github.com/BlobEmoji/queuebot/blob/master/config.example.yaml>`__.
 
 libuv
 #####

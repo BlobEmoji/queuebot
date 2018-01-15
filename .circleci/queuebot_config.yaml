@@ -1,0 +1,8 @@
+token: ""
+
+pg_credentials:
+  host: localhost
+  port: 5432
+  user: "qbotsql"
+  database: "qbottest"
+  timeout: 60

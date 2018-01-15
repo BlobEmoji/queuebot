@@ -5,13 +5,9 @@ import logging
 
 import discord
 
-import config
-
 # Can these messages be set in the config? Or at least channels/mentions/whatever
 from queuebot.utils import SUBMITTER_NOT_FOUND, UPLOADED_EMOJI_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, \
     name_id
-
-from config import suggestions_channel, required_votes, required_difference
 
 log = logging.getLogger(__name__)
 
@@ -143,7 +139,7 @@ class Suggestion:
         )
 
         # Calculate the column to modify depending on which emoji was reacted with.
-        approval = vote_emoji.id == config.approve_emoji_id
+        approval = vote_emoji.id == self.bot.config.approve_emoji_id
         vote_target = 'upvotes' if approval else 'downvotes'
 
         await self.db.execute(
@@ -189,7 +185,7 @@ class Suggestion:
     async def delete_from_council_queue(self):
         """Deletes the voting message for this suggestion from the council queue."""
         log.debug('Removing %s from council queue.', self)
-        council_queue = self.bot.get_channel(config.council_queue)
+        council_queue = self.bot.get_channel(self.bot.config.council_queue)
 
         # Delete the message in the council queue (cleanup).
         council_message = await council_queue.get_message(self.record['council_message_id'])
@@ -224,16 +220,16 @@ class Suggestion:
             await self.bot.log(UPLOADED_EMOJI_NOT_FOUND.format(action='move to PQ', suggestion=self.record))
             return
 
-        changelog = self.bot.get_channel(config.council_changelog)
-        queue = self.bot.get_channel(config.approval_queue)
+        changelog = self.bot.get_channel(self.bot.config.council_changelog)
+        queue = self.bot.get_channel(self.bot.config.approval_queue)
 
         await changelog.send(
-            f'<:{config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
+            f'<:{self.bot.config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
         )
 
         msg = await queue.send(emoji)
-        await msg.add_reaction(config.approve_emoji)
-        await msg.add_reaction(config.deny_emoji)
+        await msg.add_reaction(self.bot.config.approve_emoji)
+        await msg.add_reaction(self.bot.config.deny_emoji)
 
         await emoji.delete()
         await self.delete_from_council_queue()
@@ -264,7 +260,7 @@ class Suggestion:
     async def remove_from_public_queue(self):
         """Removes an entry from the public queue."""
 
-        public_queue = self.bot.get_channel(config.approval_queue)
+        public_queue = self.bot.get_channel(self.bot.config.approval_queue)
         try:
             msg = await public_queue.get_message(self.record["public_message_id"])
         except discord.NotFound:
@@ -315,10 +311,10 @@ class Suggestion:
 
         await self.update_inplace()
 
-        changelog = self.bot.get_channel(config.council_changelog)
+        changelog = self.bot.get_channel(self.bot.config.council_changelog)
 
         action = 'revoked' if revoke else 'denied'
-        await changelog.send(f'<:{config.deny_emoji}> {action}: {emoji} (by <@{user_id}>)')
+        await changelog.send(f'<:{self.bot.config.deny_emoji}> {action}: {emoji} (by <@{user_id}>)')
         await emoji.delete()
         await self.delete_from_council_queue()
         await self.delete_from_suggestions_channel()
@@ -345,16 +341,16 @@ class Suggestion:
         upvotes = self.record['upvotes']
         downvotes = self.record['downvotes']
 
-        if upvotes + downvotes < required_votes:
+        if upvotes + downvotes < self.bot.config.required_votes:
             # Total number of votes doesn't meet the threshold, no point taking any further action.
             return
 
-        if upvotes - downvotes >= required_difference:
+        if upvotes - downvotes >= self.bot.config.required_difference:
             # Since we don't track internal queue/public queue votes separately, we'll have to reset the upvotes
             # and downvotes columns.
             await self.reset_votes()
             await self.move_to_public_queue()
-        elif downvotes - upvotes >= required_difference:
+        elif downvotes - upvotes >= self.bot.config.required_difference:
             await self.deny()
 
     async def delete_from_suggestions_channel(self):
@@ -365,7 +361,7 @@ class Suggestion:
             log.debug('No suggestions_message_id associated with this suggestion.')
             return
 
-        channel = self.bot.get_channel(suggestions_channel)
+        channel = self.bot.get_channel(self.bot.config.suggestions_channel)
 
         try:
             message = await channel.get_message(message_id)
@@ -374,7 +370,7 @@ class Suggestion:
         except discord.HTTPException:
             await self.bot.log(
                 f"\N{WARNING SIGN} Failed to delete suggestion #{self.idx}'s message in "
-                f"<#{suggestions_channel}>."
+                f"<#{self.bot.config.suggestions_channel}>."
             )
             log.exception("Failed to delete %s\'s suggestion message ID:", self)
 

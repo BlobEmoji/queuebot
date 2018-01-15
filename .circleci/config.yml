@@ -68,7 +68,7 @@ jobs:
           name: run tests
           command: |
             . .venv/bin/activate
-            cp .circleci/queuebot_config.py config.py
+            cp .circleci/queuebot_config.yaml config.yaml
             export PYTHONPATH=$PYTHONPATH:$(pwd)
             pytest -vs
 
@@ -163,7 +163,7 @@ jobs:
           name: run tests
           command: |
             . .venv/bin/activate
-            cp .circleci/queuebot_config.py config.py
+            cp .circleci/queuebot_config.yaml config.yaml
             export PYTHONPATH=$PYTHONPATH:$(pwd)
             pytest -vs
 
@@ -214,5 +214,4 @@ workflows:
   build:
     jobs:
       - "build and install 3.6"
-      - "build and install 3.7"
       - "flake8"

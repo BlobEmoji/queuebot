@@ -13,7 +13,6 @@ import discord
 from PIL import Image
 from discord.ext import commands
 
-import config
 from queuebot.checks import is_bot_admin, is_council
 from queuebot.cog import Cog
 from queuebot.cogs.queue.converters import SuggestionConverter, PartialSuggestionConverter, PublicQueueOrEmojiConverter
@@ -31,17 +30,6 @@ clean_emoji_name = functools.partial(SAFETY_RE.sub, "_")
 logger = logging.getLogger(__name__)
 
 
-def is_vote(emoji: discord.PartialEmoji, channel_id: int) -> bool:
-    """Checks whether an emoji is the approve or deny emoji and a channel is a suggestion processing channel."""
-    if emoji.id is None:
-        return False  # not a custom emoji
-
-    if emoji.id not in [config.approve_emoji_id, config.deny_emoji_id]:
-        return False
-
-    return channel_id in [config.council_queue, config.approval_queue]
-
-
 class BlobQueue(Cog):
     """Processing blob suggestions on the Blob Emoji server."""
 
@@ -54,8 +42,18 @@ class BlobQueue(Cog):
         self.voting_lock = asyncio.Lock()
         self.vs_lock = asyncio.Lock()
 
+    def is_vote(self, emoji: discord.PartialEmoji, channel_id: int) -> bool:
+        """Checks whether an emoji is the approve or deny emoji and a channel is a suggestion processing channel."""
+        if emoji.id is None:
+            return False  # not a custom emoji
+
+        if emoji.id not in [self.config.approve_emoji_id, self.config.deny_emoji_id]:
+            return False
+
+        return channel_id in [self.config.council_queue, self.config.approval_queue]
+
     async def on_message(self, message: discord.Message):
-        if message.channel.id != config.suggestions_channel or message.author == self.bot.user:
+        if message.channel.id != self.config.suggestions_channel or message.author == self.bot.user:
             return
 
         async def respond(response):
@@ -88,7 +86,7 @@ class BlobQueue(Cog):
         except discord.HTTPException:
             await message.delete()
 
-            log = self.bot.get_channel(config.bot_log)
+            log = self.bot.get_channel(self.config.bot_log)
             logger.info(f"A suggestion by {message.author.id} was not processed due to lack of emoji or guild slots.")
             await log.send('Couldn\'t process suggestion due to having no free emoji or guild slots!')
 
@@ -119,10 +117,10 @@ class BlobQueue(Cog):
 
         animated = queue_file.filename.endswith(".gif")
 
-        queue = self.bot.get_channel(config.council_queue)
+        queue = self.bot.get_channel(self.config.council_queue)
         msg = await queue.send(emoji, file=queue_file)
-        await msg.add_reaction(config.approve_emoji)
-        await msg.add_reaction(config.deny_emoji)
+        await msg.add_reaction(self.config.approve_emoji)
+        await msg.add_reaction(self.config.deny_emoji)
 
         record = await self.db.fetchrow(
             """
@@ -153,7 +151,7 @@ class BlobQueue(Cog):
         buffer.seek(0)
         file_hash = hashlib.sha256(buffer.read()).hexdigest()
         buffer.seek(0)
-        log = self.bot.get_channel(config.suggestions_log)
+        log = self.bot.get_channel(self.config.suggestions_log)
         await log.send(
             (f'**Submission #{record["idx"]}**\n\n:{name}: by `{name_id(message.author)}`\n'
              f'Filename: {attachment.filename}\nHash: `{file_hash}`').replace('@', '@\u200b'),
@@ -165,7 +163,7 @@ class BlobQueue(Cog):
 
     async def on_raw_reaction_add(self, emoji: discord.PartialEmoji, message_id: int,
                                   channel_id: int, user_id: int):
-        if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
+        if user_id == self.bot.user.id or not self.is_vote(emoji, channel_id):
             return
 
         logger.debug('Received reaction add.')
@@ -176,7 +174,7 @@ class BlobQueue(Cog):
 
     async def on_raw_reaction_remove(self, emoji: discord.PartialEmoji, message_id: int,
                                      channel_id: int, user_id: int):
-        if user_id == self.bot.user.id or not is_vote(emoji, channel_id):
+        if user_id == self.bot.user.id or not self.is_vote(emoji, channel_id):
             return
 
         logger.debug('Received reaction remove.')
@@ -227,7 +225,7 @@ class BlobQueue(Cog):
         reason = reason or None  # do not push empty strings
         await suggestion.reset_votes()
         await suggestion.move_to_public_queue(who=ctx.author.id, reason=reason)
-        await self.bot.log(f"<:{config.approve_emoji}> Suggestion #{suggestion.idx} force approved by "
+        await self.bot.log(f"<:{self.config.approve_emoji}> Suggestion #{suggestion.idx} force approved by "
                            f"{ctx.author.mention} ({ctx.author.id})\n"
                            f"{'Reason: ' + reason if reason else 'No reason provided.'}")
         await ctx.send(f"Successfully moved #{suggestion.idx}.")
@@ -239,7 +237,7 @@ class BlobQueue(Cog):
         logger.info('%s: Denying %s.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.deny(who=ctx.author.id, reason=reason)
-        await self.bot.log(f"<:{config.deny_emoji}> Suggestion #{suggestion.idx} force denied by "
+        await self.bot.log(f"<:{self.config.deny_emoji}> Suggestion #{suggestion.idx} force denied by "
                            f"{ctx.author.mention} ({ctx.author.id})\n"
                            f"{'Reason: ' + reason if reason else 'No reason provided.'}")
         await ctx.send(f"Successfully denied #{suggestion.idx}.")
@@ -306,7 +304,7 @@ class BlobQueue(Cog):
 
                     return
 
-            queue = self.bot.get_channel(config.approval_queue)
+            queue = self.bot.get_channel(self.config.approval_queue)
 
             vs_message = await queue.send(emote_sequence)
             for this_emoji in temp_emotes:

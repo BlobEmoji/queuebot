@@ -1,0 +1,60 @@
+
+token: null
+
+pg_credentials:
+  host: localhost
+  port: 5432
+  user: 'postgres'
+  database: 'db'
+  timeout: 60
+
+
+# IDs of users who should have admin tool access (eval, reload, etc)
+admins:
+  - 69198249432449024  # FrostLuma#0005  /gh/FrostLuma
+  - 97104885337575424  # slice#4274  /gh/slice
+  - 122122926760656896  # devon#4089  /gh/Gorialis
+
+
+# Roles which possess extra authority over this bot (Blob Police, etc)
+authority_roles:
+  - 295476842935353345  # Blob Police
+
+
+# List of roles considered council (Blob Council, Council Lite, etc)
+council_roles:
+  - 294928463536586754  # Blob Council
+  - 300509002520068097  # Council Lite
+
+
+# ID of guilds in which the bot should update the emoji list
+blob_guilds:
+  - 272885620769161216  # Blob Emoji
+  - 356869031870988309  # Blob Emoji 2
+  - 356876866952364032  # Blob Emoji 3
+  - 356876897403011072  # Blob Emoji 4
+  - 396144014128054275  # Blob Emoji 5
+
+
+# Emoji info
+approve_emoji_id: 341056297921150976
+deny_emoji_id: 341056297703178242
+
+approve_emoji: 'green_tick:341056297921150976'
+deny_emoji: 'red_tick:341056297703178242'
+
+
+# Channel IDs
+bot_log: 382995510287663104
+
+suggestions_channel: 295012914564169728
+council_queue: 294924110130184193
+approval_queue: 289847856033169409
+
+suggestions_log: 382306839859036161
+council_changelog: 298920394751082507
+
+
+# Voting parameters
+required_difference: 5  # Majority required for this blob to move into the next stage
+required_votes: 15  # Minimum amount of total votes before moving to next stage

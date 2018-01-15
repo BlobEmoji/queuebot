@@ -7,7 +7,7 @@ from time import sleep
 import asyncpg
 import uvloop
 
-import config
+from queuebot.configuration import config_from_file
 from queuebot.bot import Queuebot
 
 
@@ -30,6 +30,7 @@ logging.getLogger().addHandler(stream)   # Log everything to stdout.
 
 
 async def main():
+    config = config_from_file("config.yaml")
     while True:
         try:
             db = await asyncpg.create_pool(**config.pg_credentials)
@@ -39,7 +40,7 @@ async def main():
         else:
             break
 
-    bot = Queuebot(command_prefix='q!', db=db)
+    bot = Queuebot(command_prefix='q!', config=config, db=db)
 
     bot.discover_exts('queuebot/cogs')
     await bot.start(config.token)

@@ -12,7 +12,6 @@ from asyncpg.pool import Pool
 import discord
 from discord.ext import commands
 
-import config
 from queuebot.cog import Cog
 
 logger = logging.getLogger(__name__)
@@ -30,6 +29,8 @@ class Queuebot(commands.Bot):
 
         #: List of extension names to load. We store this because `self.extensions` is volatile during reload.
         self.to_load: typing.List[str] = None
+
+        self.config = kwargs.pop('config')
 
         # Database connection to PostgreSQL
         self.db: Pool = kwargs.pop('db')
@@ -50,18 +51,18 @@ class Queuebot(commands.Bot):
 
     async def log(self, content, **kwargs) -> typing.Union[discord.Message, None]:
         timestamp = f'`[{datetime.datetime.utcnow().strftime("%H:%M")}]`'
-        channel = self.get_channel(config.bot_log)
+        channel = self.get_channel(self.config.bot_log)
         if not channel:
             return None
         return await channel.send(f'{timestamp} {content}', **kwargs)
 
     @property
     def admins(self):
-        return set([self.owner.id] + getattr(config, 'admins', []))
+        return set([self.owner.id] + self.config.get('admins', []))
 
     @property
     def council_roles(self):
-        return set(getattr(config, 'council_roles', []))
+        return set(self.config.get('council_roles', []))
 
     async def on_message(self, msg: discord.Message):
         # Ignore messages from bots.
