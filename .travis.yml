@@ -9,7 +9,7 @@ addons:
 before_script:
   - psql -c 'create database travis_testdb;' -U postgres
   - psql travis_testdb < schema.sql
-  - cp tests/travis_config.py config.py
+  - cp tests/travis_config.yaml config.yaml
   - "export PYTHONPATH=$PYTHONPATH:$(pwd)"
 install: "pip install -r requirements.txt"
 script: pytest -vs

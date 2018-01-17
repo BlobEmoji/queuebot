@@ -7,7 +7,7 @@ import os
 
 import discord
 
-import config
+from queuebot.configuration import config_from_file
 from queuebot.bot import Queuebot
 
 if os.name != "nt":
@@ -16,9 +16,11 @@ if os.name != "nt":
 
 
 async def main():
+    config = config_from_file("config.yaml")
+
     db = await asyncpg.create_pool(**config.pg_credentials)
 
-    bot = Queuebot(command_prefix='q!', db=db)
+    bot = Queuebot(command_prefix='q!', config=config, db=db)
 
     bot.discover_exts('queuebot/cogs')
 
@@ -47,12 +49,12 @@ async def main():
         )
         RETURNING idx
         """,
-        123456789012345678,
-        234567890123456789,
-        345678901234567890,
-        "test",
+        122122926760656896,
+        294924538062569492,
+        396521731440771085,
+        "blobsmile",
         datetime.datetime.utcnow(),
-        456789012345678901,
+        312640412474933248,
         False
     )
 
@@ -63,16 +65,16 @@ async def main():
     suggestion = await Suggestion.get_from_id(idx)
 
     assert repr(suggestion) == \
-        f"<Suggestion idx={idx} user_id=123456789012345678 upvotes=0 downvotes=0>"
+        f"<Suggestion idx={idx} user_id=122122926760656896 upvotes=0 downvotes=0>"
 
     queuecog = bot.get_cog("BlobQueue")
-    await queuecog.on_raw_reaction_add(discord.PartialEmoji(animated=False, name="ok", id=901234567890123456),
-                                       234567890123456789, 98765432109876543, 234567890123456789)
+    await queuecog.on_raw_reaction_add(discord.PartialEmoji(animated=False, name="green_tick", id=341056297921150976),
+                                       294924538062569492, 294924110130184193, 69198249432449024)
 
     await suggestion.update_inplace()
 
     assert repr(suggestion) == \
-        f"<Suggestion idx={idx} user_id=123456789012345678 upvotes=1 downvotes=0>"
+        f"<Suggestion idx={idx} user_id=122122926760656896 upvotes=1 downvotes=0>"
 
     await bot.close()
 

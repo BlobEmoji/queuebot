@@ -1,0 +1,58 @@
+
+token: 'token'
+
+pg_credentials:
+  host: localhost
+  port: 5432
+  user: 'myuser'
+  database: 'mydb'
+  password: 'mypassword'
+  timeout: 60
+
+
+# IDs of users who should have admin tool access (eval, reload, etc)
+admins:
+  - 1234567890
+  - 9876543210
+
+
+# Roles which possess extra authority over this bot (Blob Police, etc)
+authority_roles:
+  - 1234567890
+  - 9876543210
+
+
+# List of roles considered council (Blob Council, Council Lite, etc)
+council_roles:
+  - 1234567890
+  - 9876543210
+
+
+# ID of guilds in which the bot should update the emoji list
+blob_guilds:
+  - 1234567890
+  - 9876543210
+
+
+# Emoji info
+approve_emoji_id: 1234567890
+deny_emoji_id: 9876543210
+
+approve_emoji: 'green_tick:1234567890'
+deny_emoji: 'red_tick:9876543210'
+
+
+# Channel IDs
+bot_log: 1234567890
+
+suggestions_channel: 1234567890
+council_queue: 1234567890
+approval_queue: 1234567890
+
+suggestions_log: 1234567890
+council_changelog: 1234567890
+
+
+# Voting parameters
+required_difference: 5  # Majority required for this blob to move into the next stage
+required_votes: 15  # Minimum amount of total votes before moving to next stage

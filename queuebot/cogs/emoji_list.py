@@ -3,7 +3,6 @@ from typing import List
 
 import discord
 
-from config import blob_guilds
 from queuebot.cog import Cog
 
 
@@ -31,7 +30,7 @@ def format_emoji_list(guild: discord.Guild) -> List[str]:
 
 class EmojiList(Cog):
     async def on_guild_emojis_update(self, guild: discord.Guild, *_):
-        if guild.id not in blob_guilds:
+        if guild.id not in self.config.blob_guilds:
             return
 
         formatted = format_emoji_list(guild)
