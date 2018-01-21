@@ -2,10 +2,10 @@
 token: null
 
 pg_credentials:
-  host: localhost
+  host: db
   port: 5432
-  user: 'postgres'
-  database: 'db'
+  user: postgres
+  database: postgres
   timeout: 60
 
 
