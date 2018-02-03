@@ -11,8 +11,8 @@ pg_credentials:
 
 # IDs of users who should have admin tool access (eval, reload, etc)
 admins:
-  - 69198249432449024  # FrostLuma#0005  /gh/FrostLuma
-  - 97104885337575424  # slice#4274  /gh/slice
+  - 69198249432449024  # FrostLuma#0001  /gh/FrostLuma
+  - 97104885337575424  # slice#0001  /gh/slice
   - 122122926760656896  # devon#4089  /gh/Gorialis
 
 
