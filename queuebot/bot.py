@@ -56,9 +56,10 @@ class Queuebot(commands.Bot):
             return None
         return await channel.send(f'{timestamp} {content}', **kwargs)
 
-    @property
-    def admins(self):
-        return set([self.owner.id] + self.config.get('admins', []))
+    async def is_owner(self, user):
+        if user.id in self.config.get('admins', []):
+            return True
+        return await super().is_owner(user)
 
     @property
     def council_roles(self):

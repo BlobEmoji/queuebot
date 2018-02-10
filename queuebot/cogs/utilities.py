@@ -4,7 +4,7 @@ import logging
 
 from discord.ext import commands
 
-from queuebot.checks import is_bot_admin, is_council
+from queuebot.checks import is_council
 from queuebot.cog import Cog
 from queuebot.utils import Timer, Table
 
@@ -30,7 +30,7 @@ class Utilities(Cog):
 
         def format_cmd(command):
             checks = [check.__qualname__ for check in command.checks]
-            admin = ' Usable by bot admins only.' if any('is_bot_admin' in check for check in checks) else ''
+            admin = ' Usable by bot admins only.' if any('is_owner' in check for check in checks) else ''
             return f'`{ctx.prefix}{command.signature}`: {command.help}' + admin
 
         for cmd in regular_commands:
@@ -63,7 +63,7 @@ class Utilities(Cog):
         """Bot Administration"""
 
     @wrench.command()
-    @is_bot_admin()
+    @commands.is_owner()
     async def reload(self, ctx: commands.Context):
         """Reloads all extensions."""
         try:

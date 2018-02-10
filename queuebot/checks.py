@@ -2,12 +2,6 @@
 from discord.ext import commands
 
 
-def is_bot_admin():
-    def predicate(ctx: commands.Context) -> bool:
-        return ctx.author.id in ctx.bot.admins
-    return commands.check(predicate)
-
-
 def is_police():
     def predicate(ctx: commands.Context) -> bool:
         if not ctx.guild:

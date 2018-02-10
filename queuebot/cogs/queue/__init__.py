@@ -13,7 +13,7 @@ import discord
 from PIL import Image
 from discord.ext import commands
 
-from queuebot.checks import is_bot_admin, is_council
+from queuebot.checks import is_council
 from queuebot.cog import Cog
 from queuebot.cogs.queue.converters import SuggestionConverter, PartialSuggestionConverter, PublicQueueOrEmojiConverter
 from queuebot.cogs.queue.suggestion import Suggestion
@@ -207,7 +207,7 @@ class BlobQueue(Cog):
         return await self.bot.create_guild('BlobQueue Emoji Buffer')
 
     @commands.command()
-    @is_bot_admin()
+    @commands.is_owner()
     async def buffer_info(self, ctx):
         """Shows information about buffer guilds."""
         try:

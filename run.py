@@ -43,6 +43,7 @@ async def main():
     bot = Queuebot(command_prefix='q!', config=config, db=db)
 
     bot.discover_exts('queuebot/cogs')
+    bot.load_extension('jishaku')
     await bot.start(config.token)
 
 
