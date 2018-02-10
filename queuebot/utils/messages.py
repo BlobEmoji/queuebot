@@ -8,6 +8,7 @@ __all__ = (
     'SUGGESTION_RECEIVED',
     'SUGGESTION_APPROVED',
     'SUGGESTION_DENIED',
+    'SUGGESTION_TOO_LARGE',
     'UPLOADED_EMOJI_NOT_FOUND',
     'SUBMITTER_NOT_FOUND'
 )
@@ -29,6 +30,15 @@ BAD_SUGGESTION_MSG = (
     'to understand it. To suggest an emoji, you must post the emoji name, '
     'like so: `:my_emoji_name:` and upload the emoji as an attachment. Feel '
     'free to try again, and if you are still having problems ask in <#289482554250100736>'
+)
+
+SUGGESTION_TOO_LARGE = (
+    'Hey there! Looks like you tried to submit an emoji, but it was  '
+    'too large to accept (it must be under 256kb).\nIf it\'s static, '
+    'try making it smaller (but at least 128x128).\nIf it\'s animated, '
+    'try reducing the length of the animation or reducing the framerate.\n'
+    'Once you\'ve limbo\'d under the 256kb bar, you can submit again '
+    'and we\'ll be able to review it for you.'
 )
 
 SUGGESTION_RECEIVED = (

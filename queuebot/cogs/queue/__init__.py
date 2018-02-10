@@ -100,8 +100,16 @@ class BlobQueue(Cog):
             # use the first 36 chars of filename, removing the .png or .jpg extension (to make the name max 32 chars)
             name = attachment.filename[:36][:-4]
 
+        buffer_content = buffer.read()
+
+        if len(buffer_content) > 261888:
+            await message.delete()
+            logger.info(f"A suggestion by {message.author.id} was rejected because it was too large.")
+            await respond(SUGGESTION_TOO_LARGE)
+            return
+
         emoji = await guild.create_custom_emoji(
-            name=clean_emoji_name(name), image=buffer.read(), reason='new blob suggestion'
+            name=clean_emoji_name(name), image=buffer_content, reason='new blob suggestion'
         )
 
         logger.info(f"Created new emoji by name {name} in guild {guild.id}.")
