@@ -29,9 +29,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
+          - v1-dependencies-36-{{ checksum "requirements.txt" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+          - v1-dependencies-36-
 
       - run:
           name: install dependencies
@@ -99,8 +99,8 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
-          - v1-dependencies-
+          - v1-dependencies-37-{{ checksum "requirements.txt" }}
+          - v1-dependencies-37-
 
       - run:
           name: grab self-built wheels for problematic packages
