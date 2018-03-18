@@ -25,8 +25,8 @@ class Utilities(Cog):
         paginator.add_line()
 
         # `Group`s are `Command`s, so we cannot use `Command` in our `isinstance` checks here.
-        regular_commands = [c for c in ctx.bot.commands if not isinstance(c, commands.Group)]
-        groups = [c for c in ctx.bot.commands if isinstance(c, commands.Group)]
+        regular_commands = [c for c in ctx.bot.commands if not isinstance(c, commands.Group) and not c.hidden]
+        groups = [c for c in ctx.bot.commands if isinstance(c, commands.Group) and not c.hidden]
 
         def format_cmd(command):
             checks = [check.__qualname__ for check in command.checks]
