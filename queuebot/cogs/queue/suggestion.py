@@ -282,7 +282,8 @@ class Suggestion:
 
         if not emoji:
             await self.bot.log(UPLOADED_EMOJI_NOT_FOUND.format(action='deny', suggestion=self.record))
-            raise self.OperationError("Error denying -- the uploaded emoji wasn't found.")
+            # this is NOT an operation error
+            raise RuntimeError("Error denying -- the uploaded emoji wasn't found.")
 
         if not user:
             await self.bot.log(SUBMITTER_NOT_FOUND.format(action='deny', suggestion=self.record))
