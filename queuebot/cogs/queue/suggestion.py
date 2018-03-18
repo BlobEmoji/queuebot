@@ -157,28 +157,16 @@ class Suggestion:
             return
 
         column = "has_approved" if approval else "has_denied"
-        if vote_type == vote_type.YAY:
-            await self.db.execute(
-                f"""
-                INSERT INTO council_votes (suggestion_index, user_id, {column}) VALUES
-                ($1, $2, TRUE)
-                ON CONFLICT (suggestion_index, user_id)
-                DO UPDATE SET
-                {column} = TRUE
-                """,
-                self.idx, who
-            )
-        else:
-            await self.db.execute(
-                f"""
-                INSERT INTO council_votes (suggestion_index, user_id, {column}) VALUES
-                ($1, $2, FALSE)
-                ON CONFLICT (suggestion_index, user_id)
-                DO UPDATE SET
-                {column} = FALSE
-                """,
-                self.idx, who
-            )
+        await self.db.execute(
+            f"""
+            INSERT INTO council_votes (suggestion_index, user_id, {column}) VALUES
+            ($1, $2, $3::BOOLEAN)
+            ON CONFLICT (suggestion_index, user_id)
+            DO UPDATE SET
+            {column} = $3::BOOLEAN
+            """,
+            self.idx, who, vote_type == vote_type.YAY
+        )
 
         await self.check_council_votes()
 
@@ -227,28 +215,44 @@ class Suggestion:
             f'<:{self.bot.config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
         )
 
-        msg = await queue.send(emoji)
-        await msg.add_reaction(self.bot.config.approve_emoji)
-        await msg.add_reaction(self.bot.config.deny_emoji)
+        async with self.db.acquire() as conn:
+            async with conn.transaction():
+                # first attempt to push to approval queue..
+                msg = await queue.send(emoji)
 
-        await emoji.delete()
-        await self.delete_from_council_queue()
-        await self.delete_from_suggestions_channel()
+                # then update the entry, including resetting the votes
+                await conn.execute(
+                    """
+                    UPDATE suggestions
+                    SET public_message_id = $1,
+                    council_approved = TRUE,
+                    forced_reason = $2,
+                    forced_by = $3,
+                    validation_time = $4,
+                    upvotes = 0,
+                    downvotes = 0
+                    WHERE idx = $5
+                    """,
+                    msg.id, reason, who, datetime.datetime.utcnow(), self.idx
+                )
+
+                # delete from suggestions channel
+                # we do this first, because if it fails, it means the emoji will linger in council queue
+                #  and approval queue will have no method of voting. this prevents damage to this suggestion's data.
+                await self.delete_from_suggestions_channel()
+
+                # since that worked, we can now add the reactions
+                await msg.add_reaction(self.bot.config.approve_emoji)
+                await msg.add_reaction(self.bot.config.deny_emoji)
+
+            # now the record has been safely updated, and the emoji successfully mirrored to approval, we
+            #  can finally remove it from the queue and delete its emoji.
+            await self.delete_from_council_queue()
+            await emoji.delete()
 
         # Update this suggestion's row in the database to reflect the move to the public queue.
-        log.info('Setting public_message_id -> %d', msg.id)
-        await self.db.execute(
-            """
-            UPDATE suggestions
-            SET public_message_id = $1,
-            council_approved = TRUE,
-            forced_reason = $2,
-            forced_by = $3,
-            validation_time = $4
-            WHERE idx = $5
-            """,
-            msg.id, reason, who, datetime.datetime.utcnow(), self.idx
-        )
+        log.info('Set public_message_id -> %d', msg.id)
+
         await self.update_inplace()
 
         if user:
@@ -294,21 +298,12 @@ class Suggestion:
             SET council_approved = FALSE,
             forced_reason = $1,
             forced_by = $2,
-            validation_time = $3
-            WHERE idx = $4
+            validation_time = $3,
+            revoked = $4::BOOLEAN
+            WHERE idx = $5
             """,
-            reason, who, datetime.datetime.utcnow(), self.idx
+            reason, who, datetime.datetime.utcnow(), revoke, self.idx
         )
-
-        if revoke:
-            await self.db.execute(
-                """
-                UPDATE suggestions
-                SET revoked = TRUE
-                WHERE idx = $1
-                """,
-                self.idx
-            )
 
         await self.update_inplace()
 
@@ -316,21 +311,16 @@ class Suggestion:
 
         action = 'revoked' if revoke else 'denied'
         await changelog.send(f'<:{self.bot.config.deny_emoji}> {action}: {emoji} (by <@{user_id}>)')
-        await emoji.delete()
-        await self.delete_from_council_queue()
+
         await self.delete_from_suggestions_channel()
+        await self.delete_from_council_queue()
+        await emoji.delete()
 
         if user and not revoke:
             try:
                 await user.send(SUGGESTION_DENIED)
             except discord.HTTPException:
                 await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji.')
-
-    async def reset_votes(self):
-        await self.db.execute(
-            'UPDATE suggestions SET upvotes = 0, downvotes = 0 WHERE idx = $1', self.idx
-        )
-        await self.update_inplace()
 
     async def check_council_votes(self):
         """
@@ -347,9 +337,6 @@ class Suggestion:
             return
 
         if upvotes - downvotes >= self.bot.config.required_difference:
-            # Since we don't track internal queue/public queue votes separately, we'll have to reset the upvotes
-            # and downvotes columns.
-            await self.reset_votes()
             await self.move_to_public_queue()
         elif downvotes - upvotes >= self.bot.config.required_difference:
             await self.deny()
