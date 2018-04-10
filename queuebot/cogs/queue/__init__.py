@@ -34,15 +34,6 @@ NUMERIC_EMOTES = [str(n) + "\N{COMBINING ENCLOSING KEYCAP}" for n in range(1, 6)
 COMPACT_VS_JOINER = " \N{SQUARED VS} "
 VERBOSE_VS_JOINER = "\n     \N{SQUARED VS}\n"
 
-
-def compact_vs_mapper(el: list, e: discord.PartialEmoji) -> str:
-    return str(e)
-
-
-def verbose_vs_mapper(el: list, e: discord.PartialEmoji) -> str:
-    return NUMERIC_EMOTES[el.index(e)] + str(e)
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -301,10 +292,10 @@ class BlobQueue(Cog):
                         ))
 
             if self.config.verbose_vs:
-                mapped_lines = [verbose_vs_mapper(temp_emotes, e) for e in temp_emotes]
+                mapped_lines = [NUMERIC_EMOTES[temp_emotes.index(e)] + str(e) for e in temp_emotes]
                 emote_sequence = VERBOSE_VS_JOINER.join(mapped_lines)
             else:
-                mapped_lines = [compact_vs_mapper(temp_emotes, e) for e in temp_emotes]
+                mapped_lines = [str(e) for e in temp_emotes]
                 emote_sequence = COMPACT_VS_JOINER.join(mapped_lines)
 
             await ctx.send(f"Are you sure you want to do a VS vote between these emoji? "
