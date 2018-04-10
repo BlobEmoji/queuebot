@@ -27,6 +27,22 @@ NAME_RE = re.compile(r'(\w{2,32}):?\d?')
 SAFETY_RE = re.compile(r'[^a-zA-Z0-9_]')
 clean_emoji_name = functools.partial(SAFETY_RE.sub, "_")
 
+# List of numeric keycap emotes from 1-6
+NUMERIC_EMOTES = [str(n) + "\N{COMBINING ENCLOSING KEYCAP}" for n in range(1, 6)]
+
+# Different vs patterns; Compact = Original, Verbose = Issue #32
+COMPACT_VS_JOINER = " \N{SQUARED VS} "
+VERBOSE_VS_JOINER = "\n     \N{SQUARED VS}\n"
+
+
+def compact_vs_mapper(el: list, e: discord.PartialEmoji) -> str:
+    return str(e)
+
+
+def verbose_vs_mapper(el: list, e: discord.PartialEmoji) -> str:
+    return NUMERIC_EMOTES[el.index(e)] + str(e)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -284,7 +300,12 @@ class BlobQueue(Cog):
                             name=emoji_name, image=await resp.read(), reason='temp blob for vs'
                         ))
 
-            emote_sequence = " \N{SQUARED VS} ".join(map(str, temp_emotes))
+            if self.config.verbose_vs:
+                mapped_lines = [verbose_vs_mapper(temp_emotes, e) for e in temp_emotes]
+                emote_sequence = VERBOSE_VS_JOINER.join(mapped_lines)
+            else:
+                mapped_lines = [compact_vs_mapper(temp_emotes, e) for e in temp_emotes]
+                emote_sequence = COMPACT_VS_JOINER.join(mapped_lines)
 
             await ctx.send(f"Are you sure you want to do a VS vote between these emoji? "
                            f"(`confirm` or `cancel`)\nIt will look like this:")
@@ -315,7 +336,7 @@ class BlobQueue(Cog):
 
             vs_message = await queue.send(emote_sequence)
             for this_emoji in temp_emotes:
-                await vs_message.add_reaction(this_emoji)
+                await vs_message.add_reaction(NUMERIC_EMOTES[temp_emotes.index(this_emoji)])
                 await this_emoji.delete()
 
             merge_list = []
