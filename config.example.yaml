@@ -57,5 +57,5 @@ council_changelog: 1234567890
 required_difference: 5  # Majority required for this blob to move into the next stage
 required_votes: 15  # Minimum amount of total votes before moving to next stage
 
-# Versus voting message type, Verbose (true) or Compact (false)
+# Versus voting message type, Verbose (true) for a more descriptive voting message, or Compact (false) for the standard emoji vs emoji
 verbose_vs: false

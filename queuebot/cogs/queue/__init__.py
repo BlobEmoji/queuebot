@@ -290,7 +290,7 @@ class BlobQueue(Cog):
 
             if self.config.verbose_vs:
                 emote_sequence = VERBOSE_VS_JOINER.join(
-                    [str(i) + "\n{COMBINING ENCLOSING KEYCAP}" + str(e) for i, e in enumerate(temp_emotes, 1)]
+                    [f"{i}\N{COMBINING ENCLOSING KEYCAP}{e}" for i, e in enumerate(temp_emotes, 1)]
                 )
             else:
                 emote_sequence = COMPACT_VS_JOINER.join(map(str, temp_emotes))
@@ -324,7 +324,7 @@ class BlobQueue(Cog):
 
             vs_message = await queue.send(emote_sequence)
             for index, this_emoji in enumerate(temp_emotes, 1):
-                await vs_message.add_reaction(str(index) + "\N{COMBINING ENCLOSING KEYCAP}")
+                await vs_message.add_reaction(f"{index}\N{COMBINING ENCLOSING KEYCAP}")
                 await this_emoji.delete()
 
             merge_list = []
