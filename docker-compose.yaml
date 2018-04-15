@@ -5,12 +5,12 @@ services:
   bot:
     build: .
     depends_on:
-      - db
+      - postgres
     volumes:
       - ./:/app
 
-  db:
-    image: postgres:10
+  postgres:
+    image: postgres:10-alpine
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
