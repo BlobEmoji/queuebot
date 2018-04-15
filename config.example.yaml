@@ -56,3 +56,12 @@ council_changelog: 1234567890
 # Voting parameters
 required_difference: 5  # Majority required for this blob to move into the next stage
 required_votes: 15  # Minimum amount of total votes before moving to next stage
+
+# Versus voting message type, Verbose (true), or Compact (false)
+# Verbose style:
+# [1] em1
+#    v
+# [2] em2
+# Compact style:
+# em1 v em2
+verbose_vs: false

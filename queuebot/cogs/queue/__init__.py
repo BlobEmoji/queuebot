@@ -27,6 +27,10 @@ NAME_RE = re.compile(r'(\w{2,32}):?\d?')
 SAFETY_RE = re.compile(r'[^a-zA-Z0-9_]')
 clean_emoji_name = functools.partial(SAFETY_RE.sub, "_")
 
+# Different vs patterns; Compact = Original, Verbose = Issue #32
+COMPACT_VS_JOINER = " \N{SQUARED VS} "
+VERBOSE_VS_JOINER = "\n\N{EM SPACE}\N{SQUARED VS}\n"
+
 logger = logging.getLogger(__name__)
 
 
@@ -284,7 +288,12 @@ class BlobQueue(Cog):
                             name=emoji_name, image=await resp.read(), reason='temp blob for vs'
                         ))
 
-            emote_sequence = " \N{SQUARED VS} ".join(map(str, temp_emotes))
+            if self.config.verbose_vs:
+                emote_sequence = VERBOSE_VS_JOINER.join(
+                    [f"{i}\N{COMBINING ENCLOSING KEYCAP}{e}" for i, e in enumerate(temp_emotes, 1)]
+                )
+            else:
+                emote_sequence = COMPACT_VS_JOINER.join(map(str, temp_emotes))
 
             await ctx.send(f"Are you sure you want to do a VS vote between these emoji? "
                            f"(`confirm` or `cancel`)\nIt will look like this:")
@@ -314,8 +323,8 @@ class BlobQueue(Cog):
             queue = self.bot.get_channel(self.config.approval_queue)
 
             vs_message = await queue.send(emote_sequence)
-            for this_emoji in temp_emotes:
-                await vs_message.add_reaction(this_emoji)
+            for index, this_emoji in enumerate(temp_emotes, 1):
+                await vs_message.add_reaction(f"{index}\N{COMBINING ENCLOSING KEYCAP}")
                 await this_emoji.delete()
 
             merge_list = []
