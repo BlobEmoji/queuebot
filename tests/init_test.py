@@ -6,6 +6,7 @@ import datetime
 import os
 
 import discord
+from discord import raw_models
 
 from queuebot.configuration import config_from_file
 from queuebot.bot import Queuebot
@@ -68,8 +69,14 @@ async def main():
         f"<Suggestion idx={idx} user_id=122122926760656896 upvotes=0 downvotes=0>"
 
     queuecog = bot.get_cog("BlobQueue")
-    await queuecog.on_raw_reaction_add(discord.PartialEmoji(animated=False, name="green_tick", id=341056297921150976),
-                                       294924538062569492, 294924110130184193, 69198249432449024)
+
+    event = raw_models.RawReactionActionEvent({
+        'message_id': 294924538062569492,
+        'channel_id': 294924110130184193,
+        'user_id': 69198249432449024
+    }, discord.PartialEmoji(animated=False, name="green_tick", id=341056297921150976))
+    
+    await queuecog.on_raw_reaction_add(event)
 
     await suggestion.update_inplace()
 

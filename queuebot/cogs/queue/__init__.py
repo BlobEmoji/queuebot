@@ -11,6 +11,7 @@ from os import path
 import aiohttp
 import discord
 from PIL import Image
+from discord import raw_models
 from discord.ext import commands
 
 from queuebot.checks import is_council
@@ -173,27 +174,25 @@ class BlobQueue(Cog):
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED)
 
-    async def on_raw_reaction_add(self, emoji: discord.PartialEmoji, message_id: int,
-                                  channel_id: int, user_id: int):
-        if user_id == self.bot.user.id or not self.is_vote(emoji, channel_id):
+    async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
+        if payload.user_id == self.bot.user.id or not self.is_vote(payload.emoji, payload.channel_id):
             return
 
         logger.debug('Received reaction add.')
 
         async with self.voting_lock:
-            s = await Suggestion.get_from_message(message_id)
-            await s.process_vote(emoji, Suggestion.VoteType.YAY, message_id, user_id)
+            s = await Suggestion.get_from_message(payload.message_id)
+            await s.process_vote(payload.emoji, Suggestion.VoteType.YAY, payload.message_id, payload.user_id)
 
-    async def on_raw_reaction_remove(self, emoji: discord.PartialEmoji, message_id: int,
-                                     channel_id: int, user_id: int):
-        if user_id == self.bot.user.id or not self.is_vote(emoji, channel_id):
+    async def on_raw_reaction_remove(self, payload: raw_models.RawReactionActionEvent):
+        if payload.user_id == self.bot.user.id or not self.is_vote(payload.emoji, payload.channel_id):
             return
 
         logger.debug('Received reaction remove.')
 
         async with self.voting_lock:
-            s = await Suggestion.get_from_message(message_id)
-            await s.process_vote(emoji, Suggestion.VoteType.NAY, message_id, user_id)
+            s = await Suggestion.get_from_message(payload.message_id)
+            await s.process_vote(payload.emoji, Suggestion.VoteType.NAY, payload.message_id, payload.user_id)
 
     def has_emoji_slots(self, guild: discord.Guild) -> bool:
         return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
