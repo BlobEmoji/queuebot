@@ -75,7 +75,7 @@ async def main():
         'channel_id': 294924110130184193,
         'user_id': 69198249432449024
     }, discord.PartialEmoji(animated=False, name="green_tick", id=341056297921150976))
-    
+
     await queuecog.on_raw_reaction_add(event)
 
     await suggestion.update_inplace()
