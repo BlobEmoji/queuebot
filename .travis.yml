@@ -11,5 +11,7 @@ before_script:
   - psql travis_testdb < schema.sql
   - cp tests/travis_config.yaml config.yaml
   - "export PYTHONPATH=$PYTHONPATH:$(pwd)"
-install: "pip install -r requirements.txt"
+install: 
+  - pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
+  - pip install -r requirements.txt
 script: pytest -vs
