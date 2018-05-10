@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 IGNORED_ERRORS = (
     commands.CommandNotFound,
-    commands.CommandOnCooldown,
     commands.NotOwner
 )
 
@@ -41,6 +40,10 @@ class Errors(Cog):
     async def on_command_error(self, ctx: Context, exception):
         # TODO: Handle more errors.
         if isinstance(exception, IGNORED_ERRORS):
+            return
+
+        if isinstance(exception, commands.CommandOnCooldown):
+            await ctx.send(f'You\'re on cooldown! Please wait {exception.retry_after:.1f} seconds before trying again.')
             return
 
         if isinstance(exception, commands.CommandInvokeError):

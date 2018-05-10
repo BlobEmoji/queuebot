@@ -483,7 +483,7 @@ class BlobQueue(Cog):
             return discord.File(filename="test.png", fp=buffer)
 
     @commands.command()
-    @is_council()
+    @commands.cooldown(1, 60, commands.BucketType.user)
     async def test(self, ctx, suggestion: PartialSuggestionConverter=None):
         """Test a suggestion's appearance on dark and light themes."""
 
