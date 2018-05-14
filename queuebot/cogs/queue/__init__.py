@@ -570,7 +570,8 @@ class BlobQueue(Cog):
         table = Table('User', 'Vote', 'When')
         for record in vote_records:
             user = ctx.bot.get_user(record['user_id'])
-            voted_by = f'{user} {user.id}' if user else str(s.record['user_id'])
+            voted_by = f'{user} {user.id}' if user else str(record['user_id'])
+
 
             approve = record['has_approved']
             deny = record['has_denied']
