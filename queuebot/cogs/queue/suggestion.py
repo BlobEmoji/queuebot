@@ -4,9 +4,9 @@ import enum
 import logging
 
 import discord
+from discord.ext import commands
 
-# Can these messages be set in the config? Or at least channels/mentions/whatever
-from queuebot.utils import SUBMITTER_NOT_FOUND, UPLOADED_EMOJI_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, \
+from queuebot.utils import SUBMITTER_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, UPLOADED_EMOJI_NOT_FOUND, \
     name_id
 
 log = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ class Suggestion:
         self.record = record
 
     def __repr__(self):
-        return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>'\
+        return '<Suggestion idx={0[idx]} user_id={0[user_id]} upvotes={0[upvotes]} downvotes={0[downvotes]}>' \
             .format(self.record)
 
     def __eq__(self, other):
