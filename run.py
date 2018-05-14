@@ -34,7 +34,7 @@ async def main():
     while True:
         try:
             db = await asyncpg.create_pool(**config.pg_credentials)
-        except asyncpg.CannotConnectNowError:
+        except (ConnectionRefusedError, asyncpg.CannotConnectNowError):
             logging.getLogger('run').exception('Cannot connect to Postgres, stalling:')
             await asyncio.sleep(2)
         else:
