@@ -407,3 +407,14 @@ class Suggestion:
             raise cls.NotFound('Suggestion not found.')
 
         return cls(record)
+
+    @classmethod
+    async def convert(cls, _ctx, argument: str):
+        if not argument.isdigit():
+            raise commands.BadArgument('Invalid suggestion ID: not a numeral.') from None
+
+        try:
+            sugg_id = int(argument)
+            return await cls.get_from_id(sugg_id)
+        except Suggestion.NotFound:
+            raise commands.BadArgument('Suggestion not found.') from None

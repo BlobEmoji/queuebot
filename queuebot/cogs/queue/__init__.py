@@ -16,7 +16,7 @@ from discord.ext import commands
 
 from queuebot.checks import is_council
 from queuebot.cog import Cog
-from queuebot.cogs.queue.converters import SuggestionConverter, PartialSuggestionConverter, PublicQueueOrEmojiConverter
+from queuebot.cogs.queue.converters import PartialSuggestionConverter, PublicQueueOrEmojiConverter
 from queuebot.cogs.queue.suggestion import Suggestion
 from queuebot.utils.formatting import name_id, Table
 from queuebot.utils.messages import *  # noqa: ignore=F401
@@ -230,7 +230,7 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council()
-    async def approve(self, ctx, suggestion: SuggestionConverter, *, reason=None):
+    async def approve(self, ctx, suggestion: Suggestion, *, reason=None):
         """Moves a suggestion from the council queue to the public queue."""
         logger.info('%s: Moving %s to public (approval) queue.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
@@ -242,7 +242,7 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council()
-    async def deny(self, ctx, suggestion: SuggestionConverter, *, reason=None):
+    async def deny(self, ctx, suggestion: Suggestion, *, reason=None):
         """Denies an emoji that is currently in the council queue."""
         logger.info('%s: Denying %s.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
@@ -343,7 +343,7 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council()
-    async def status(self, ctx, suggestion: SuggestionConverter):
+    async def status(self, ctx, suggestion: Suggestion):
         """Views the status of a submission."""
         await ctx.send(embed=suggestion.embed)
         return
@@ -424,7 +424,7 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council()
-    async def show(self, ctx, suggestion: SuggestionConverter):
+    async def show(self, ctx, suggestion: Suggestion):
         """Show a suggestion's emoji."""
         embed = discord.Embed(title=f'Suggestion {suggestion.idx}')
         embed.set_image(url=suggestion.emoji_url)
