@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
+import datetime
 import importlib
 import inspect
 import logging
 import typing
 from pathlib import Path
 
-import datetime
-
 import aiohttp
-from asyncpg.pool import Pool
 import discord
+from asyncpg.pool import Pool
 from discord.ext import commands
 
 from queuebot.cog import Cog
+from queuebot.context import Context
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,8 @@ class Queuebot(commands.Bot):
         # Do not process commands until we are ready.
         await self.wait_until_ready()
 
-        await self.process_commands(msg)
+        context = await self.get_context(msg, cls=Context)
+        await self.invoke(context)
 
     def load_extension(self, name: str):
         extension_module = importlib.import_module(name)

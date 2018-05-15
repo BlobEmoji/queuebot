@@ -234,6 +234,12 @@ class BlobQueue(Cog):
     @is_council()
     async def approve(self, ctx, suggestion: Suggestion, *, reason=None):
         """Moves a suggestion from the council queue to the public queue."""
+        embed = discord.Embed()
+        embed.set_image(url=suggestion.emoji_url)
+        if not await ctx.confirm('Are you sure that you want to **approve** this suggestion?', embed=embed,
+                                 color=discord.Color.green()):
+            return
+
         logger.info('%s: Moving %s to public (approval) queue.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.move_to_public_queue(who=ctx.author.id, reason=reason)
@@ -246,6 +252,11 @@ class BlobQueue(Cog):
     @is_council()
     async def deny(self, ctx, suggestion: Suggestion, *, reason=None):
         """Denies an emoji that is currently in the council queue."""
+        embed = discord.Embed()
+        embed.set_image(url=suggestion.emoji_url)
+        if not await ctx.confirm('Are you sure you want to **deny** this suggestion?', embed=embed):
+            return
+
         logger.info('%s: Denying %s.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.deny(who=ctx.author.id, reason=reason)
