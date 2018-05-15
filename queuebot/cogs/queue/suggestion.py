@@ -318,7 +318,7 @@ class Suggestion:
 
         # Sane checks for command usage.
         if self.is_in_public_queue:
-            raise self.OperationError("Emoji can only be denied while in the council queue.")
+            raise self.OperationError("This emoji can only be denied while in the council queue.")
         if self.is_denied:
             raise self.OperationError("This emoji has already been denied.")
 

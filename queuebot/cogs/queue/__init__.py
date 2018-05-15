@@ -58,10 +58,11 @@ class BlobQueue(Cog):
         return channel_id in [self.config.council_queue, self.config.approval_queue]
 
     async def on_message(self, message: discord.Message):
+        """Handles messages sent in the suggestions channel."""
         if message.channel.id != self.config.suggestions_channel or message.author == self.bot.user:
             return
 
-        async def respond(response):
+        async def respond(response: str) -> discord.Message:
             try:
                 return await message.author.send(response)
             except discord.HTTPException:
