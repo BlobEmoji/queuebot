@@ -220,6 +220,8 @@ class Suggestion:
         """
         if self.is_in_public_queue:
             raise self.OperationError('This emoji is already in the approval queue.')
+        elif self.is_denied:
+            raise self.OperationError('This emoji has already been denied.')
 
         log.info('Moving %s to the public queue.', self)
 
