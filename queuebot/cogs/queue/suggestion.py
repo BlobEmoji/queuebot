@@ -132,6 +132,17 @@ class Suggestion:
 
         Internally, the upvotes/downvotes column in the database is updated, and a vote check occurs.
         This method is also called for public queue votes, but we do not check those votes, only tally them.
+
+        Parameters
+        ----------
+        vote_emoji : discord.PartialEmoji
+            The emoji that was used to vote. This will determine whether the vote is for or against the suggestion.
+        vote_type : VoteType
+            The type of vote.
+        message_id : int
+            The message ID that was voted on.
+        who : int
+            The ID of the user that voted.
         """
         log.debug(
             'Processing vote! (suggestion: %s) (vote: vote_emoji=%s, operator=%s, message_id=%d, who=%d)',
@@ -153,7 +164,8 @@ class Suggestion:
         await self.update_inplace()
 
         if self.record['public_message_id'] is not None:
-            # Don't process public votes. We still keep track of them, though.
+            # don't keep track of individual votes for suggestions in the public
+            # queue.
             return
 
         column = "has_approved" if approval else "has_denied"
@@ -188,12 +200,26 @@ class Suggestion:
         await self.update_inplace()
 
     async def move_to_public_queue(self, *, who=None, reason=None):
-        """Moves this suggestion to the public queue."""
+        """
+        Moves this suggestion to the public queue for the masses to vote on.
+
+        This will have several effects:
+        - The suggestion will be pushed the approval queue.
+        - The database entry will be updated appropriately.
+        - The message in the public suggestions channel will be deleted.
+        - The message in the private council queue will be deleted.
+        - The emoji itself will be deleted, because we don't need it anymore.
+          This bot does not handle anything from here on out.
+
+        Parameters
+        ----------
+        who : discord.User, optional
+            The user that forcibly approved this emoji, if any.
+        reason : str, optional
+            The reason given for the forced approval of this emoji.
+        """
         if self.is_in_public_queue:
-            raise self.OperationError(
-                "Cannot move this suggestion to the public approval queue -- it is already in the public approval "
-                "queue. "
-            )
+            raise self.OperationError('This emoji is already in the approval queue.')
 
         log.info('Moving %s to the public queue.', self)
 
@@ -202,10 +228,10 @@ class Suggestion:
         emoji = self.bot.get_emoji(self.record['emoji_id'])
 
         if not user:
-            await self.bot.log(SUBMITTER_NOT_FOUND.format(action='move to PQ', suggestion=self.record))
+            await self.bot.log(SUBMITTER_NOT_FOUND.format(action='move to approval queue', suggestion=self.record))
 
         if not emoji:
-            await self.bot.log(UPLOADED_EMOJI_NOT_FOUND.format(action='move to PQ', suggestion=self.record))
+            await self.bot.log(UPLOADED_EMOJI_NOT_FOUND.format(action='move to approval queue', suggestion=self.record))
             return
 
         changelog = self.bot.get_channel(self.bot.config.council_changelog)
@@ -238,7 +264,7 @@ class Suggestion:
 
                 # delete from suggestions channel
                 # we do this first, because if it fails, it means the emoji will linger in council queue
-                #  and approval queue will have no method of voting. this prevents damage to this suggestion's data.
+                # and approval queue will have no method of voting. this prevents damage to this suggestion's data.
                 await self.delete_from_suggestions_channel()
 
                 # since that worked, we can now add the reactions
@@ -246,11 +272,10 @@ class Suggestion:
                 await msg.add_reaction(self.bot.config.deny_emoji)
 
             # now the record has been safely updated, and the emoji successfully mirrored to approval, we
-            #  can finally remove it from the queue and delete its emoji.
+            # can finally remove it from the queue and delete its emoji.
             await self.delete_from_council_queue()
             await emoji.delete()
 
-        # Update this suggestion's row in the database to reflect the move to the public queue.
         log.info('Set public_message_id -> %d', msg.id)
 
         await self.update_inplace()
@@ -275,12 +300,25 @@ class Suggestion:
         await msg.delete()
 
     async def deny(self, *, who=None, reason=None, revoke=False):
-        """Denies this emoji."""
+        """
+        Denies this emoji, removing it from the suggestions channel and council
+        queue.
+
+        Parameters
+        ----------
+        who : discord.User, optional
+            The user that forcibly denied this emoji, if any.
+        reason : str, optional
+            The reason given for the forced denial of this emoji.
+        revoke : bool, optional
+            Indicates whether the emoji was revoked by the submitter.
+        """
+
         # Sane checks for command usage.
         if self.is_in_public_queue:
-            raise self.OperationError("Can't deny this suggestion -- it's already in the public queue.")
+            raise self.OperationError("Emoji can only be denied while in the council queue.")
         if self.is_denied:
-            raise self.OperationError("Can't deny this suggestion -- it has already been denied.")
+            raise self.OperationError("This emoji has already been denied.")
 
         user_id = self.record['user_id']
         user = self.bot.get_user(user_id)
@@ -289,7 +327,7 @@ class Suggestion:
         if not emoji:
             await self.bot.log(UPLOADED_EMOJI_NOT_FOUND.format(action='deny', suggestion=self.record))
             # this is NOT an operation error
-            raise RuntimeError("Error denying -- the uploaded emoji wasn't found.")
+            raise RuntimeError("Error denying emoji: the uploaded emoji was not found.")
 
         if not user:
             await self.bot.log(SUBMITTER_NOT_FOUND.format(action='deny', suggestion=self.record))
@@ -328,7 +366,7 @@ class Suggestion:
 
     async def check_council_votes(self):
         """
-        Checks the amount of upvotes and downvotes for this suggestion, and performs a denial or transfer to the council
+        Checks the amount of upvotes and downvotes for this suggestion, and performs a denial or transfer to the public
         queue if applicable.
 
         The conclusion logic is identical to b1nb0t.
@@ -364,7 +402,7 @@ class Suggestion:
                 f"\N{WARNING SIGN} Failed to delete suggestion #{self.idx}'s message in "
                 f"<#{self.bot.config.suggestions_channel}>: `{exc}`"
             )
-            log.exception("Failed to delete %s\'s suggestion message ID:", self)
+            log.exception("Failed to delete %s's suggestion message ID:", self)
 
     async def update_inplace(self):
         """Updates the internal state of this suggestion from the Postgres database."""
