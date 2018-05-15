@@ -94,9 +94,10 @@ class BlobQueue(Cog):
 
             log = self.bot.get_channel(self.config.bot_log)
             logger.info(f"A suggestion by {message.author.id} was not processed due to lack of emoji or guild slots.")
-            await log.send('Couldn\'t process suggestion due to having no free emoji or guild slots!')
+            await log.send("\N{WARNING SIGN} Couldn't process a suggestion due to having no free emoji or guild slots.")
 
-            return await message.author.send(BOT_BROKEN_MSG)
+            await message.author.send(BOT_BROKEN_MSG)
+            return
 
         # use the messages content or the filename, removing the .png or .jpg extension
         match = NAME_RE.search(message.content)
