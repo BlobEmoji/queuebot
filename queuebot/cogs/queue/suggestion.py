@@ -258,8 +258,10 @@ class Suggestion:
         if user:
             try:
                 await user.send(SUGGESTION_APPROVED)
-            except discord.HTTPException:
-                await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji.')
+            except discord.HTTPException as exc:
+                await self.bot.log(
+                    f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji: `{exc}`'
+                )
 
     async def remove_from_public_queue(self):
         """Removes an entry from the public queue."""
@@ -319,8 +321,10 @@ class Suggestion:
         if user and not revoke:
             try:
                 await user.send(SUGGESTION_DENIED)
-            except discord.HTTPException:
-                await self.bot.log(f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji.')
+            except discord.HTTPException as exc:
+                await self.bot.log(
+                    f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji: `{exc}`'
+                )
 
     async def check_council_votes(self):
         """
@@ -355,10 +359,10 @@ class Suggestion:
             message = await channel.get_message(message_id)
             await message.delete()
             log.debug('Removed message %d from suggestions channel.', message.id)
-        except discord.HTTPException:
+        except discord.HTTPException as exc:
             await self.bot.log(
                 f"\N{WARNING SIGN} Failed to delete suggestion #{self.idx}'s message in "
-                f"<#{self.bot.config.suggestions_channel}>."
+                f"<#{self.bot.config.suggestions_channel}>: `{exc}`"
             )
             log.exception("Failed to delete %s\'s suggestion message ID:", self)
 
