@@ -580,8 +580,10 @@ class BlobQueue(Cog):
             LIMIT 20
         """, which)
 
-        table = Table('User', 'Vote', 'When')
+        table = Table('Suggestion', 'User', 'Vote', 'When')
         for record in vote_records:
+            suggestion_id = record['suggestion_index']
+
             user = ctx.bot.get_user(record['user_id'])
             voted_by = f'{user} {user.id}' if user else str(record['user_id'])
 
@@ -592,7 +594,9 @@ class BlobQueue(Cog):
 
             when = record["vote_time"].strftime("%Y-%m-%d %H:%M:%S UTC")
 
-            table.add_row(voted_by, vote, when)
+            table.add_row(
+                str(suggestion_id), voted_by, vote, when
+            )
 
         paginator = commands.Paginator()
         for line in (await table.render(ctx.bot.loop)).split('\n'):
