@@ -6,8 +6,9 @@ import logging
 import discord
 from discord.ext import commands
 
-from queuebot.utils import SUBMITTER_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, UPLOADED_EMOJI_NOT_FOUND, \
-    name_id
+from queuebot.utils import (SUBMITTER_NOT_FOUND, SUGGESTION_APPROVED,
+                            SUGGESTION_DENIED, UPLOADED_EMOJI_NOT_FOUND,
+                            name_id)
 
 log = logging.getLogger(__name__)
 

@@ -1,0 +1,25 @@
+
+stages:
+  - build
+
+main:
+  stage: build
+  image: gorialis/discord.py:alpine-rewrite
+  services:
+    - postgres:10-alpine
+  variables:
+    PGDATABASE: postgres
+    PGPORT: 5432
+    PGUSER: postgres
+  before_script:
+    - pip install -U coverage flake8 isort pytest pytest-cov
+    - pip install -r requirements.txt
+    - apk add --no-cache postgresql-client
+    - psql -h postgres < schema.sql
+  script:
+    - "echo \"test: true\" > config.yaml"
+    - export PYTHONPATH=$PYTHONPATH:$(pwd)
+    - pytest -vs --cov=queuebot --cov-report term-missing:skip-covered
+    - flake8 .
+    - isort . --check-only --recursive
+  retry: 1

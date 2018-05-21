@@ -13,6 +13,9 @@ before_script:
   - "export PYTHONPATH=$PYTHONPATH:$(pwd)"
 install:
   - pip install -U git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
+  - pip install -U coverage flake8 isort pytest pytest-cov
   - pip install -r requirements.txt
-  - "pip install 'yarl<1.2'"
-script: pytest -vs
+script:
+  - pytest -vs --cov=queuebot --cov-report term-missing:skip-covered
+  - flake8 .
+  - isort . --check-only --recursive

@@ -7,12 +7,10 @@ from time import sleep
 import asyncpg
 import uvloop
 
-from queuebot.configuration import config_from_file
 from queuebot.bot import Queuebot
-
+from queuebot.configuration import config_from_file
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
 
 logging.getLogger('discord').setLevel(logging.INFO)
 logging.getLogger('queuebot').setLevel(logging.DEBUG)

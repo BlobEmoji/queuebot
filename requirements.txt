@@ -4,3 +4,4 @@ uvloop
 pillow
 PyYAML
 jishaku
+yarl<1.2

@@ -1,12 +1,11 @@
 """Formatting utilities from Mousey (by @FrostLuma)."""
 # -*- coding: utf-8 -*-
 import asyncio
-import re
 import functools
+import re
 from typing import List, Match
 
 import discord
-
 
 FORMATTING_RE = re.compile(r"([*_~`\\]|<h)")
 LINK_RE = re.compile(r"(<?https?://\S*)")
@@ -23,7 +22,7 @@ def clean_links(text: str) -> str:
         match = match.group()
         # for some reason discord turns <<MY_URL>> into %3CMY_URL>
         # escaping the first < stops this from happening and displays <MY_URL> properly.
-        return f'\<{match}>' if '<' in match else f'<{match}>'
+        return fr'\<{match}>' if '<' in match else f'<{match}>'
 
     return LINK_RE.sub(replace, text)
 
@@ -31,10 +30,10 @@ def clean_links(text: str) -> str:
 def clean_formatting(text: str) -> str:
     """Escapes markdown, codeblocks and escaped links to show the "original" message to make copy pasting easy."""
     transforms = {
-        "*": "\*",
-        "_": "\_",
-        "~": "\~",
-        "`": "\`",
+        "*": r"\*",
+        "_": r"\_",
+        "~": r"\~",
+        "`": r"\`",
         "\\": "\\\\"
     }
 
@@ -92,7 +91,7 @@ class Table:
         self._rows = [column_titles]
         self._widths = []
 
-        for index, entry in enumerate(column_titles):
+        for _, entry in enumerate(column_titles):
             self._widths.append(len(entry))
 
     def _update_widths(self, row: tuple):
@@ -143,9 +142,9 @@ class Table:
 
         return "\n".join(drawn)
 
-    async def render(self, loop: asyncio.AbstractEventLoop=None):
-        """Returns a rendered version of the table."""
+    def render(self, loop: asyncio.AbstractEventLoop=None):
+        """:coro: Returns a rendered version of the table."""
         loop = loop or asyncio.get_event_loop()
 
         func = functools.partial(self._render)
-        return await loop.run_in_executor(None, func)
+        return loop.run_in_executor(None, func)

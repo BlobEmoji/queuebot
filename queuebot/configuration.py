@@ -17,9 +17,8 @@ class Configuration:
     def __getattr__(self, item):
         return self._dict.get(item)
 
-    @property
-    def get(self):
-        return self._dict.get
+    def get(self, *args, **kwargs):
+        return self._dict.get(*args, **kwargs)
 
 
 def config_from_file(file_path: str):

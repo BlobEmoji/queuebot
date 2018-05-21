@@ -6,7 +6,7 @@ from discord.ext import commands
 
 from queuebot.checks import is_council
 from queuebot.cog import Cog
-from queuebot.utils import Timer, Table
+from queuebot.utils import Table, Timer
 
 logger = logging.getLogger(__name__)
 

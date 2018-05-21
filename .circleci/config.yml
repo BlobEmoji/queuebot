@@ -4,15 +4,21 @@
 #
 version: 2
 jobs:
-  "build and install 3.6":
+  3.6:
     docker:
       - image: gorialis/discord.py:alpine-rewrite
+        environment:
+          PGDATABASE: postgres
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
 
       - image: circleci/postgres:latest
         environment:
-          POSTGRES_USER: qbotsql
-          POSTGRES_DB: qbottest
+          POSTGRES_DB: postgres
           POSTGRES_PASSWORD: ""
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
 
     working_directory: ~/repo
 
@@ -22,7 +28,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            pip install -U pytest
+            pip install -U coverage flake8 isort pytest pytest-cov
             pip install -r requirements.txt
 
       - run:
@@ -36,158 +42,23 @@ jobs:
 
       - run:
           name: apply schema
-          command: psql -d qbottest -U qbotsql < schema.sql
-          environment:
-            PGHOST: localhost
-            PGPORT: 5432
+          command: psql < schema.sql
 
       - run:
           name: run tests
           command: |
             cp .circleci/queuebot_config.yaml config.yaml
             export PYTHONPATH=$PYTHONPATH:$(pwd)
-            pytest -vs
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-  "build and install 3.7":
-    docker:
-      - image: circleci/python:3.7-rc-stretch
-
-      - image: circleci/postgres:latest
-        environment:
-          POSTGRES_USER: qbotsql
-          POSTGRES_DB: qbottest
-          POSTGRES_PASSWORD: ""
-
-    working_directory: ~/repo
-
-    steps:
-      - checkout
-
-      - run:
-          name: install zlib
-          command: |
-            sudo apt update
-            sudo apt install zlibc zlib1g zlib1g-dev
-
-      - restore_cache:
-          keys:
-          - v1-dependencies-37-{{ checksum "requirements.txt" }}
-          - v1-dependencies-37-
-
-      - run:
-          name: grab self-built wheels for problematic packages
-          # the reason for the wheels here breaks down to this:
-          #
-          # - Pillow requires zlib to build. it is available as per the above block, but as
-          #   it was not installed at python compile-time the build fails. the wheel skips the
-          #   build, ignoring the check and therefore letting Pillow install without issues
-          #
-          # - uvloop/multidict/asyncpg do not have wheels for 3.7 but require Cython and a lot of time to build.
-          #   it's quicker to just download and install a pre-built wheel than do this every checkout,
-          #   so that's what we do here
-          #
-          # - websockets/aiohttp have a bug that breaks 3.7 compat using asyncio.async. this is fixed in latest,
-          #   but as discord.py is locked, this patch isn't available for us, so we must have our own copy.
-
-          command: |
-            wget https://cdn.discordapp.com/attachments/357651359379750917/399292662622060544/distwheels.tar.xz
-            tar -xf distwheels.tar.xz
-            rm distwheels.tar.xz
-
-      - run:
-          name: install dependencies
-          command: |
-            python3 -m venv .venv
-            . .venv/bin/activate
-            pip install -U pytest
-            pip install -U wheels/uvloop-0.9.2.dev0-cp37-cp37m-linux_x86_64.whl
-            pip install -U wheels/multidict-3.3.2-cp37-cp37m-linux_x86_64.whl
-            pip install -U wheels/Pillow-5.1.0.dev0-cp37-cp37m-linux_x86_64.whl
-            pip install -U wheels/aiohttp-2.2.5-cp37-cp37m-linux_x86_64.whl
-            pip install -U wheels/asyncpg-0.14.0-cp37-cp37m-linux_x86_64.whl
-            pip install -U wheels/websockets-3.4-cp37-cp37m-linux_x86_64.whl
-            rm -rf wheels
-            pip install -r requirements.txt
-
-      - save_cache:
-          paths:
-            - ./.venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
-
-      - run:
-          name: install psql
-          command: |
-            sudo apt update
-            sudo apt install postgresql-client
-
-      - run:
-          name: wait for postgres..
-          command: sleep 2
-
-      - run:
-          name: apply schema
-          command: psql -d qbottest -U qbotsql < schema.sql
-          environment:
-            PGHOST: localhost
-            PGPORT: 5432
-
-      - run:
-          name: run tests
-          command: |
-            . .venv/bin/activate
-            cp .circleci/queuebot_config.yaml config.yaml
-            export PYTHONPATH=$PYTHONPATH:$(pwd)
-            pytest -vs
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
-  "flake8":
-    docker:
-      - image: circleci/python:3.6.4-stretch
-
-    working_directory: ~/repo
-
-    steps:
-      - checkout
-
-      - restore_cache:
-          keys:
-          - v1-dependencies-flake8-{{ checksum "requirements.txt" }}
-          - v1-dependencies-flake8-
-
-      - run:
-          name: install flake8
-          command: |
-            python3 -m venv .venv
-            . .venv/bin/activate
-            pip install -U flake8
-
-      - save_cache:
-          paths:
-            - ./.venv
-          key: v1-dependencies-flake8-{{ checksum "requirements.txt" }}
-
-      - run:
-          name: run tests
-          command: |
-            . .venv/bin/activate
-            export PYTHONPATH=$PYTHONPATH:$(pwd)
+            pytest -vs --cov=queuebot --cov-report term-missing:skip-covered
             flake8 .
+            isort . --check-only --recursive
 
       - store_artifacts:
           path: test-reports
           destination: test-reports
-          
 
 workflows:
   version: 2
   build:
     jobs:
-      - "build and install 3.6"
-      - "flake8"
+      - 3.6

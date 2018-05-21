@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
-import asyncpg
 import datetime
 import os
 
+import asyncpg
 import discord
 from discord import raw_models
 
-from queuebot.configuration import config_from_file
 from queuebot.bot import Queuebot
+from queuebot.configuration import config_from_file
 
 if os.name != "nt":
     import uvloop
@@ -18,6 +18,9 @@ if os.name != "nt":
 
 async def main():
     config = config_from_file("config.yaml")
+
+    assert config.get("pg_credentials")
+    assert config.get("pg_credentials") == config.pg_credentials
 
     db = await asyncpg.create_pool(**config.pg_credentials)
 
