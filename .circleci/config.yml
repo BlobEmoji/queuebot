@@ -4,7 +4,7 @@
 #
 version: 2
 jobs:
-  3.6:
+  "alpine 3.6":
     docker:
       - image: gorialis/discord.py:alpine-rewrite
         environment:
@@ -61,4 +61,4 @@ workflows:
   version: 2
   build:
     jobs:
-      - 3.6
+      - "alpine 3.6"
