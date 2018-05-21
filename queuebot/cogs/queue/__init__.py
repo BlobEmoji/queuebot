@@ -580,7 +580,7 @@ class BlobQueue(Cog):
             LIMIT 20
         """, which)
 
-        table = Table('Suggestion', 'User', 'Vote', 'When')
+        table = Table('#', 'User', 'Vote', 'When')
         for record in vote_records:
             suggestion_id = record['suggestion_index']
 
