@@ -14,7 +14,7 @@ from PIL import Image
 from discord import raw_models
 from discord.ext import commands
 
-from queuebot.checks import is_council
+from queuebot.checks import is_council, is_council_or_cooldown
 from queuebot.cog import Cog
 from queuebot.cogs.queue.converters import PartialSuggestionConverter, PublicQueueOrEmojiConverter
 from queuebot.cogs.queue.suggestion import Suggestion
@@ -496,7 +496,7 @@ class BlobQueue(Cog):
             return discord.File(filename="test.png", fp=buffer)
 
     @commands.command()
-    @commands.cooldown(1, 60, commands.BucketType.user)
+    @is_council_or_cooldown(1, 60, commands.BucketType.user)
     async def test(self, ctx, suggestion: PartialSuggestionConverter=None):
         """Test a suggestion's appearance on dark and light themes."""
 
