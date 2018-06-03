@@ -25,7 +25,7 @@ SUBMITTER_NOT_FOUND = (
 
 BAD_SUGGESTION_MSG = (
     'Heya! Looks like you tried to suggest '
-    'an emoji to the Blob Server. Unfortunately it looks like '
+    'an emoji to the Blob Emoji Server. Unfortunately it looks like '
     'you didn\'t send your message in the right format, so I wasn\'t able '
     'to understand it. To suggest an emoji, you must post the emoji name, '
     'like so: `:my_emoji_name:` and upload the emoji as an attachment. Feel '
@@ -43,7 +43,7 @@ SUGGESTION_TOO_LARGE = (
 
 SUGGESTION_RECEIVED = (
     'Thanks for your emoji submission to the '
-    'Google Blob Server! It\'s been added to our internal vote queue, '
+    'Blob Emoji Server! It\'s been added to our internal vote queue, '
     'so expect an update soon! Your suggestion was left in the channel as a '
     'public indication, please don\'t delete it!'
 )
