@@ -513,7 +513,7 @@ class BlobQueue(Cog):
                 async with ctx.bot.session.get(suggestion[1]) as resp:
                     emoji_bytes = await resp.read()
             except aiohttp.ClientError:
-                await ctx.send("Couldn't download the emoji... <:blobthinkingfast:357765371962589185>")
+                await ctx.send("Couldn't download the emoji... <:blobthinkingfast:452680715755192330>")
                 return
 
             emoji_bio = BytesIO(emoji_bytes)
@@ -522,7 +522,7 @@ class BlobQueue(Cog):
                 emoji_im = Image.open(emoji_bio)
             except OSError:
                 await ctx.send("Unable to identify the file type of that emoji. "
-                               "<:blobthinkingfast:357765371962589185>")
+                               "<:blobthinkingfast:452680715755192330>")
                 return
 
             file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
