@@ -15,7 +15,8 @@ ALTER TABLE IF EXISTS suggestions
     -- message ids
     ADD COLUMN IF NOT EXISTS suggestions_message_id BIGINT, -- ID of the message ID in the suggestions queue
 
-    ADD COLUMN IF NOT EXISTS revoked BOOLEAN -- emoji was revoked by submitter
+    ADD COLUMN IF NOT EXISTS revoked BOOLEAN, -- emoji was revoked by submitter
+    ADD COLUMN IF NOT EXISTS note TEXT
 ;
 
 
@@ -39,6 +40,8 @@ CREATE TABLE IF NOT EXISTS suggestions (
     emoji_id BIGINT,
     emoji_name TEXT,
     emoji_animated BOOLEAN,
+
+    note TEXT,
 
     -- votes
     upvotes INT DEFAULT 0,

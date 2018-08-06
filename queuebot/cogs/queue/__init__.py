@@ -23,6 +23,7 @@ from queuebot.utils.messages import *  # noqa: ignore=F401
 
 # Matches the full string or the name of a custom emoji (since replacements for those might be posted).
 NAME_RE = re.compile(r'(\w{2,32}):?\d?')
+NOTE_RE = re.compile(r'- ([^-]+)$')
 
 # Matches all characters that can't be an emoji name
 SAFETY_RE = re.compile(r'[^a-zA-Z0-9_]')
@@ -107,6 +108,16 @@ class BlobQueue(Cog):
             # use the first 36 chars of filename, removing the .png or .jpg extension (to make the name max 32 chars)
             name = attachment.filename[:36][:-4]
 
+        # detect note
+        note_match = NOTE_RE.search(message.content)
+
+        if note_match is not None:
+            note = note_match.groups()[0][:140]
+        else:
+            note = None
+
+        logger.debug('Message content: "%s", detected name: "%s", detected note: "%s"', message.content, name, note)
+
         buffer_content = buffer.read()
 
         if len(buffer_content) > 261888:
@@ -146,10 +157,11 @@ class BlobQueue(Cog):
                 emoji_name,
                 submission_time,
                 suggestions_message_id,
-                emoji_animated
+                emoji_animated,
+                note
             )
             VALUES (
-                $1, $2, $3, $4, $5, $6, $7
+                $1, $2, $3, $4, $5, $6, $7, $8
             )
             RETURNING idx
             """,
@@ -159,7 +171,8 @@ class BlobQueue(Cog):
             name,
             message.created_at,
             message.id,
-            animated
+            animated,
+            note
         )
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
