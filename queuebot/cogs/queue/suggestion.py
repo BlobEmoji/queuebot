@@ -246,6 +246,14 @@ class Suggestion:
             f'<:{self.bot.config.approve_emoji}> moved to {queue.mention}: {emoji} (by <@{user_id}>)'
         )
 
+        if user:
+            try:
+                await user.send(SUGGESTION_APPROVED.format(suggestion=emoji))
+            except discord.HTTPException as exc:
+                await self.bot.log(
+                    f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji: `{exc}`'
+                )		
+		
         async with self.db.acquire() as conn:
             async with conn.transaction():
                 # first attempt to push to approval queue..
@@ -284,14 +292,6 @@ class Suggestion:
         log.info('Set public_message_id -> %d', msg.id)
 
         await self.update_inplace()
-
-        if user:
-            try:
-                await user.send(SUGGESTION_APPROVED)
-            except discord.HTTPException as exc:
-                await self.bot.log(
-                    f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji: `{exc}`'
-                )
 
     async def remove_from_public_queue(self):
         """Removes an entry from the public queue."""
@@ -357,17 +357,17 @@ class Suggestion:
         action = 'revoked' if revoke else 'denied'
         await changelog.send(f'<:{self.bot.config.deny_emoji}> {action}: {emoji} (by <@{user_id}>)')
 
-        await self.delete_from_suggestions_channel()
-        await self.delete_from_council_queue()
-        await emoji.delete()
-
         if user and not revoke:
             try:
-                await user.send(SUGGESTION_DENIED)
+                await user.send(SUGGESTION_DENIED.format(suggestion=emoji))
             except discord.HTTPException as exc:
                 await self.bot.log(
                     f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji: `{exc}`'
-                )
+                )		
+		
+        await self.delete_from_suggestions_channel()
+        await self.delete_from_council_queue()
+        await emoji.delete()
 
     async def check_council_votes(self):
         """
