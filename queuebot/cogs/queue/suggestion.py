@@ -252,8 +252,8 @@ class Suggestion:
             except discord.HTTPException as exc:
                 await self.bot.log(
                     f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji: `{exc}`'
-                )		
-		
+                )
+
         async with self.db.acquire() as conn:
             async with conn.transaction():
                 # first attempt to push to approval queue..
@@ -363,8 +363,8 @@ class Suggestion:
             except discord.HTTPException as exc:
                 await self.bot.log(
                     f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji: `{exc}`'
-                )		
-		
+                )
+
         await self.delete_from_suggestions_channel()
         await self.delete_from_council_queue()
         await emoji.delete()
