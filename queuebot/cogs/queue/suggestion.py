@@ -84,30 +84,60 @@ class Suggestion:
         return self.record["downvotes"]
 
     @property
-    def embed(self):
+    def embed_color(self):
         if self.is_denied:
-            color = discord.Color.red()
+            return discord.Color.red()
         elif self.is_in_public_queue:
-            color = discord.Color.green()
+            return discord.Color.green()
         else:
-            color = discord.Color.blue()
+            return discord.Color.blue()
 
-        embed = discord.Embed(title=f'Suggestion #{self.idx} :{self.record["emoji_name"]}:',
-                              color=color, description=self.status)
+    @property
+    def embed(self):
+        embed = discord.Embed(
+            title=f'Suggestion #{self.idx} :{self.record["emoji_name"]}:',
+            color=self.embed_color,
+            description=self.status
+        )
+
+        submission_time = (
+            f'{self.record["submission_time"]} UTC' or 'Unknown submission time'
+        )
+
         if self.record['note']:
             embed.description = f'Note: {self.record["note"]}'
-        embed.set_thumbnail(url=self.emoji_url)
-        embed.add_field(name='Score', value=f'\N{BLACK UP-POINTING TRIANGLE} {self.record["upvotes"]} / '
-                                            f'\N{BLACK DOWN-POINTING TRIANGLE} {self.record["downvotes"]}')
 
-        submission_time = f'{self.record["submission_time"]} UTC' or 'Unknown submission time'
-        embed.add_field(name='Submitted', value=f'By <@{self.record["user_id"]}>\n{submission_time}')
+        embed.set_thumbnail(url=self.emoji_url)
+
+        embed.add_field(
+            name='Score',
+            value=(
+                f'\N{BLACK UP-POINTING TRIANGLE} {self.record["upvotes"]} / '
+                f'\N{BLACK DOWN-POINTING TRIANGLE} {self.record["downvotes"]}'
+            )
+        )
+
+        embed.add_field(
+            name='Submitted',
+            value=f'By <@{self.record["user_id"]}>\n{submission_time}'
+        )
 
         if self.record['forced_by']:
-            verdict = 'Denial' if self.is_denied else 'Approval' if self.is_in_public_queue else '...'
+            if self.is_denied:
+                verdict = 'Denial'
+            elif self.is_in_public_queue:
+                verdict = 'Approval'
+            else:
+                verdict = '?'
 
-            embed.add_field(name=f'Forced {verdict}', value=f'<@{self.record["forced_by"]}>\n'
-                                                            f'Reason: "{self.record["forced_reason"]}"', inline=False)
+            embed.add_field(
+                name=f'Forced {verdict}',
+                value=(
+                    f'By <@{self.record["forced_by"]}>\n'
+                    f'Reason: "{self.record["forced_reason"]}"'
+                ),
+                inline=False
+            )
 
         return embed
 
