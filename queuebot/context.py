@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord.ext import commands
 
@@ -24,9 +26,9 @@ class Context(commands.Context):
 
         try:
             reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=60.0)
-        except TimeoutError:
+        except asyncio.TimeoutError:
             await self.send('Timed out.')
-            return
+            return False
         result = reaction.emoji == decision_emojis[0]
         if not result:
             await self.send('Cancelled.')
