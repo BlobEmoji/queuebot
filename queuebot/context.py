@@ -5,14 +5,14 @@ from discord.ext import commands
 
 
 class Context(commands.Context):
-    async def confirm(self, description=None, *, embed=None, color=None):
+    async def confirm(self, description=None, *, embed=None, title=None, color=None):
         decision_emojis = [
             self.bot.get_emoji(self.bot.config.approve_emoji_id),
             self.bot.get_emoji(self.bot.config.deny_emoji_id)
         ]
         embed = embed or discord.Embed()
         embed.color = color or discord.Colour.red()
-        embed.title = 'Are you sure?'
+        embed.title = title or 'Are you sure?'
         embed.set_footer(text=str(self.author), icon_url=self.author.avatar_url)
         embed.description = description
         message = await self.send(embed=embed)
