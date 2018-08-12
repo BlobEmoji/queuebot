@@ -320,30 +320,17 @@ class BlobQueue(Cog):
             else:
                 emote_sequence = COMPACT_VS_JOINER.join(map(str, temp_emotes))
 
-            await ctx.send(f"Are you sure you want to do a VS vote between these emoji? "
-                           f"(`confirm` or `cancel`)\nIt will look like this:")
-            await ctx.send(emote_sequence)
+            decision = await ctx.confirm(
+                f"It will look like:\n\n{emote_sequence}",
+                title='Create a VS vote?',
+                color=discord.Colour.gold()
+            )
 
-            def wait_check(msg):
-                return msg.author.id == ctx.author.id and msg.content.lower() in ('confirm', 'cancel')
-
-            try:
-                validate_message = await self.bot.wait_for('message', check=wait_check, timeout=30)
-            except asyncio.TimeoutError:
-                await ctx.send("Timed out, not creating VS vote.")
-
-                for this_emoji in temp_emotes:
-                    await this_emoji.delete()
-
+            # Timed out or user cancelled action
+            if not decision:
+                for temp_emoji in temp_emotes:
+                    await temp_emoji.delete()
                 return
-            else:
-                if validate_message.content.lower() == 'cancel':
-                    await ctx.send("Cancelled.")
-
-                    for this_emoji in temp_emotes:
-                        await this_emoji.delete()
-
-                    return
 
             queue = self.bot.get_channel(self.config.approval_queue)
 
