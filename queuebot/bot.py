@@ -37,6 +37,17 @@ class Queuebot(commands.Bot):
 
         self.session = aiohttp.ClientSession(loop=self.loop)
 
+    @property
+    def council_roles(self):
+        return set(self.config.get('council_roles', []))
+
+    @property
+    def blob_emoji(self) -> discord.Guild:
+        suggestions_channel = self.get_channel(self.config.suggestions_channel)
+        if suggestions_channel is None:
+            return None
+        return suggestions_channel.guild
+
     async def close(self):
         logger.info('Closing.')
         await super().close()
@@ -60,10 +71,6 @@ class Queuebot(commands.Bot):
         if user.id in self.config.get('admins', []):
             return True
         return await super().is_owner(user)
-
-    @property
-    def council_roles(self):
-        return set(self.config.get('council_roles', []))
 
     async def on_message(self, msg: discord.Message):
         # Ignore messages from bots.
