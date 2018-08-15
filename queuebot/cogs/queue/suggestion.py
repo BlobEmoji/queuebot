@@ -307,9 +307,8 @@ class Suggestion:
                 await msg.add_reaction(self.bot.config.deny_emoji)
 
             # now the record has been safely updated, and the emoji successfully mirrored to approval, we
-            # can finally remove it from the queue and delete its emoji.
+            # can finally remove it from the queue.
             await self.delete_from_council_queue()
-            await emoji.delete()
 
         log.info('Set public_message_id -> %d', msg.id)
 
@@ -317,11 +316,13 @@ class Suggestion:
 
         if user:
             try:
-                await user.send(SUGGESTION_APPROVED)
+                await user.send(SUGGESTION_APPROVED.format(suggestion=emoji))
             except discord.HTTPException as exc:
                 await self.bot.log(
                     f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their approved emoji: `{exc}`'
                 )
+
+        await emoji.delete()
 
     async def remove_from_public_queue(self):
         """Removes an entry from the public queue."""
@@ -389,15 +390,16 @@ class Suggestion:
 
         await self.delete_from_suggestions_channel()
         await self.delete_from_council_queue()
-        await emoji.delete()
 
         if user and not revoke:
             try:
-                await user.send(SUGGESTION_DENIED)
+                await user.send(SUGGESTION_DENIED.format(suggestion=emoji))
             except discord.HTTPException as exc:
                 await self.bot.log(
                     f'\N{WARNING SIGN} Failed to DM `{name_id(user)}` about their denied emoji: `{exc}`'
                 )
+
+        await emoji.delete()
 
     async def check_council_votes(self):
         """

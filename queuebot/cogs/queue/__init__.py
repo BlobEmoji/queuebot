@@ -187,7 +187,7 @@ class BlobQueue(Cog):
         )
 
         await message.add_reaction('\N{EYES}')
-        await respond(SUGGESTION_RECEIVED)
+        await respond(SUGGESTION_RECEIVED.format(suggestion=emoji))
 
     async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
         if payload.user_id == self.bot.user.id or not self.is_vote(payload.emoji, payload.channel_id):

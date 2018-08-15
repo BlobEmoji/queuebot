@@ -42,22 +42,20 @@ SUGGESTION_TOO_LARGE = (
 )
 
 SUGGESTION_RECEIVED = (
-    'Thanks for your emoji submission to the '
+    'Thanks for your emoji submission ({suggestion}) to the '
     'Blob Emoji Server! It\'s been added to our internal vote queue, '
     'so expect an update soon! Your suggestion was left in the channel as a '
     'public indication, please don\'t delete it!'
 )
 
 SUGGESTION_APPROVED = (
-    'Looks like one of your emoji suggestions was '
-    'passed through our internal queue! Check out <#298920394751082507> to see '
-    'which it was and go vote for your suggestion in <#289847856033169409>!'
+    'Looks like your emoji suggestion {suggestion} has passed through our  '
+    'internal queue! Go vote for your suggestion in <#289847856033169409>!'
 )
 
 SUGGESTION_DENIED = (
-    'Unfortunately, your emoji suggestion was denied after going '
-    'through internal review. Check out <#298920394751082507> to see '
-    'which it was. Feel free to keep suggesting more emoji, but please '
+    'Unfortunately, your emoji suggestion {suggestion} was denied after going '
+    'through internal review. Feel free to keep suggesting more emoji, but please '
     'don\'t submit the same one unless you\'ve modified it significantly!'
 )
 
