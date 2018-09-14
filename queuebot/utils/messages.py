@@ -33,7 +33,7 @@ BAD_SUGGESTION_MSG = (
 )
 
 SUGGESTION_TOO_LARGE = (
-    'Hey there! Looks like you tried to submit an emoji, but it was  '
+    'Hey there! Looks like you tried to submit an emoji, but it was '
     'too large to accept (it must be under 256kb).\nIf it\'s static, '
     'try making it smaller (but at least 128x128).\nIf it\'s animated, '
     'try reducing the length of the animation or reducing the framerate.\n'
@@ -49,7 +49,7 @@ SUGGESTION_RECEIVED = (
 )
 
 SUGGESTION_APPROVED = (
-    'Looks like your emoji suggestion {suggestion} has passed through our  '
+    'Looks like your emoji suggestion {suggestion} has passed through our '
     'internal queue! Go vote for your suggestion in <#289847856033169409>!'
 )
 
