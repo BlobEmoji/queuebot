@@ -258,7 +258,7 @@ class BlobQueue(Cog):
         await self.bot.log(f"<:{self.config.approve_emoji}> Suggestion #{suggestion.idx} force approved by "
                            f"{ctx.author.mention} ({ctx.author.id})\n"
                            f"{'Reason: ' + reason if reason else 'No reason provided.'}")
-        await ctx.send(f"Successfully moved #{suggestion.idx}.")
+        await ctx.send(f"{ctx.bot.tick()} Successfully approved #{suggestion.idx}.")
 
     @commands.command()
     @is_council()
@@ -275,7 +275,7 @@ class BlobQueue(Cog):
         await self.bot.log(f"<:{self.config.deny_emoji}> Suggestion #{suggestion.idx} force denied by "
                            f"{ctx.author.mention} ({ctx.author.id})\n"
                            f"{'Reason: ' + reason if reason else 'No reason provided.'}")
-        await ctx.send(f"Successfully denied #{suggestion.idx}.")
+        await ctx.send(f"{ctx.bot.tick()} Successfully denied #{suggestion.idx}.")
 
     @commands.command()
     @is_council()
@@ -350,7 +350,7 @@ class BlobQueue(Cog):
 
             merge_format = "\n".join(merge_list)
 
-            await ctx.send(f"Successfully created VS vote.\n{merge_format}")
+            await ctx.send(f"{ctx.bot.tick()} Successfully created VS vote.\n{merge_format}")
             await asyncio.sleep(5)  # add extra effect to the Lock
 
     @commands.command()
@@ -499,6 +499,8 @@ class BlobQueue(Cog):
     async def test(self, ctx, suggestion: PartialSuggestionConverter=None):
         """Test a suggestion's appearance on dark and light themes."""
 
+        red_tick = ctx.bot.tick(False)
+
         if suggestion is None:
             if ctx.message.attachments and ctx.message.attachments[0].proxy_url:
                 suggestion = (None, ctx.message.attachments[0].proxy_url)
@@ -511,8 +513,8 @@ class BlobQueue(Cog):
             try:
                 async with ctx.bot.session.get(suggestion[1]) as resp:
                     emoji_bytes = await resp.read()
-            except aiohttp.ClientError:
-                await ctx.send("Couldn't download the emoji... <:blobthinkingfast:452680715755192330>")
+            except aiohttp.ClientError as err:
+                await ctx.send(f"{red_tick} Failed to download the emoji: `{err}`")
                 return
 
             emoji_bio = BytesIO(emoji_bytes)
@@ -520,8 +522,7 @@ class BlobQueue(Cog):
             try:
                 emoji_im = Image.open(emoji_bio)
             except OSError:
-                await ctx.send("Unable to identify the file type of that emoji. "
-                               "<:blobthinkingfast:452680715755192330>")
+                await ctx.send(f"{red_tick} Unable to identify the file type of the emoji.")
                 return
 
             file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
@@ -533,7 +534,7 @@ class BlobQueue(Cog):
         """Views recent suggestions."""
 
         if limit > 200:
-            await ctx.send(f'{limit} suggestions is a bit much. 200 is the maximum.')
+            await ctx.send(f'{ctx.bot.tick(False)} {limit} suggestions is too much. (200 max)')
             return
 
         suggestions = [Suggestion(record) for record in await self.db.fetch("""

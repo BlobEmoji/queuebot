@@ -73,7 +73,7 @@ class Utilities(Cog):
             await ctx.send("An error has occurred while reloading.")
             logger.exception('Error has occurred while reloading:')
         else:
-            await ctx.send('Reloaded.')
+            await ctx.send(f'{ctx.bot.tick()} Reloaded.')
 
     @commands.command()
     @is_council()
