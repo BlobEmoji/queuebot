@@ -47,6 +47,17 @@ class Queuebot(commands.Bot):
             return None
         return suggestions_channel.guild
 
+    def tick(self, variant: bool = True, *, id: bool = False) -> typing.Union[int, discord.Emoji]:
+        if variant:
+            emoji_id = self.config.approve_emoji_id
+        else:
+            emoji_id = self.config.deny_emoji_id
+
+        if id:
+            return emoji_id
+        else:
+            return self.get_emoji(emoji_id)
+
     async def close(self):
         logger.info('Closing.')
         await super().close()
