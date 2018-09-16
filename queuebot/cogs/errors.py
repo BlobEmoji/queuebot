@@ -18,7 +18,7 @@ IGNORED_ERRORS = (
 )
 
 
-def get_trace(error: Exception, limit=15) -> str:
+def get_trace(error: Exception, limit: int = 15) -> str:
     return ''.join(traceback.format_exception(type(error), error, error.__traceback__, limit=limit))
 
 
@@ -26,7 +26,7 @@ class Errors(Cog):
     def __init__(self, bot):
         super().__init__(bot)
 
-        # Uhh...I don't know.
+        # on_error isn't an event. It's a method on bot that must be overwritten.
         self.__old_on_error = bot.on_error
         bot.on_error = self.on_error
 
