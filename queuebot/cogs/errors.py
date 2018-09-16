@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import traceback
 from hashlib import sha256

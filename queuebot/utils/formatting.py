@@ -1,5 +1,4 @@
 """Formatting utilities from Mousey (by @FrostLuma)."""
-# -*- coding: utf-8 -*-
 import asyncio
 import functools
 import re

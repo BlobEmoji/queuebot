@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import enum
 import logging

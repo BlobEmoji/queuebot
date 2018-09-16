@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# strings taken from https://github.com/b1naryth1ef
+# Strings taken from https://github.com/b1naryth1ef.
 
 __all__ = (
     'BOT_BROKEN_MSG',

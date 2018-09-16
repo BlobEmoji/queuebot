@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import asyncio
 
 from discord.ext import commands
