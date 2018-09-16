@@ -105,7 +105,7 @@ class Suggestion:
         )
 
         if self.record['note']:
-            embed.description = f'Note: {self.record["note"]}'
+            embed.description += f'\n\nNote: {self.record["note"]}'
 
         embed.set_thumbnail(url=self.emoji_url)
 
