@@ -1,5 +1,6 @@
 import asyncio
 
+import yarl
 from discord.ext import commands
 
 from queuebot.cogs.queue.suggestion import Suggestion
@@ -23,7 +24,7 @@ class PartialSuggestionConverter(commands.Converter):
                 for _ in range(10):
                     await asyncio.sleep(0.5)
                     if ctx.message.embeds and ctx.message.embeds[0].thumbnail:
-                        return None, ctx.message.embeds[0].thumbnail.proxy_url
+                        return None, yarl.URL(ctx.message.embeds[0].thumbnail.proxy_url, encoded=True)
 
             raise commands.BadArgument("Couldn't resolve to suggestion or image.") from None
 
