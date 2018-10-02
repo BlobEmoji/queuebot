@@ -7,7 +7,7 @@ from queuebot.cog import Cog
 
 STATUSES = [
     (discord.ActivityType.watching, '{user.name}'),
-    (discord.ActivityType.watching, '#suggestions'),
+    (discord.ActivityType.watching, '#submissions'),
     (discord.ActivityType.watching, 'blobs as they come in'),
     (discord.ActivityType.playing, 'with blobs'),
     (discord.ActivityType.listening, 'blob radio')
