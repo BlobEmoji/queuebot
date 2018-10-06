@@ -353,7 +353,7 @@ class BlobQueue(Cog):
             await ctx.send(f"{ctx.bot.tick()} Successfully created VS vote.\n{merge_format}")
             await asyncio.sleep(5)  # add extra effect to the Lock
 
-    @commands.command()
+    @commands.command(aliases=['info'])
     @is_council()
     async def status(self, ctx, suggestion: Suggestion):
         """Views the status of a submission."""
