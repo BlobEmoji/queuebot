@@ -358,7 +358,6 @@ class BlobQueue(Cog):
     async def status(self, ctx, suggestion: Suggestion):
         """Views the status of a submission."""
         await ctx.send(embed=suggestion.embed)
-        return
 
     @commands.command()
     async def revoke(self, ctx):
@@ -496,7 +495,7 @@ class BlobQueue(Cog):
 
     @commands.command()
     @is_council_or_cooldown(1, 60, commands.BucketType.user)
-    async def test(self, ctx, suggestion: PartialSuggestionConverter=None):
+    async def test(self, ctx, suggestion: PartialSuggestionConverter = None):
         """Test a suggestion's appearance on dark and light themes."""
 
         red_tick = ctx.bot.tick(False)
@@ -530,7 +529,7 @@ class BlobQueue(Cog):
 
     @commands.command(aliases=['sg'])
     @is_council()
-    async def suggestions(self, ctx, limit: int=10):
+    async def suggestions(self, ctx, limit: int = 10):
         """Views recent suggestions."""
 
         if limit > 200:
