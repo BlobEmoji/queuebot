@@ -6,6 +6,8 @@ services:
     build: .
     depends_on:
       - postgres
+    environment:
+      - JISHAKU_HIDE=1
     volumes:
       - ./:/app
 
