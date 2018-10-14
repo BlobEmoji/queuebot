@@ -1,4 +1,3 @@
-import inspect
 import logging
 
 from discord.ext import commands
@@ -11,11 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Utilities(Cog):
-    @commands.group(aliases=['w'])
-    async def wrench(self, ctx: commands.Context):
-        """Bot Administration"""
-
-    @wrench.command()
+    @commands.command()
     @commands.is_owner()
     async def reload(self, ctx: commands.Context):
         """Reloads all extensions."""
