@@ -20,9 +20,6 @@ class Queuebot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Remove default help command.
-        self.remove_command('help')
-
         #: OAuth2 application owner.
         self.owner: discord.User = None
 
