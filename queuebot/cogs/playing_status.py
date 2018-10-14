@@ -16,8 +16,12 @@ STATUSES = [
 
 class PlayingStatus(Cog):
     def __init__(self, bot):
-        self.bot = bot
-        bot.loop.create_task(self.rotate_forever())
+        super().__init__(bot)
+
+        self.task = bot.loop.create_task(self.rotate_forever())
+
+    def __unload(self):
+        self.task.cancel()
 
     def generate_activity(self):
         """Generate a random :class:`discord.Activity`."""
