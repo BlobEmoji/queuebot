@@ -448,6 +448,21 @@ class Suggestion:
         )
         log.debug('Updated suggestion inplace. %s', self)
 
+    async def update_note(self, note):
+        """Update the suggestion note and council queue message if it exists."""
+
+        await self.db.execute('UPDATE suggestions SET note = $1 WHERE idx = $2', note, self.idx)
+
+        if self.is_in_public_queue:
+            log.debug('aa')
+            return
+
+        channel = self.bot.get_channel(self.bot.config.council_queue)
+        message = await channel.get_message(self.record['council_message_id'])
+
+        embed = discord.Embed(title=f'Suggestion {self.idx}', description=note)
+        await message.edit(embed=embed)
+
     @classmethod
     async def get_from_id(cls, suggestion_id: int) -> 'Suggestion':
         """Returns a Suggestion instance by ID."""
@@ -470,15 +485,15 @@ class Suggestion:
         """
         Returns a Suggestion instance by message ID.
 
-        This works for messages in the council queue, or public queue.
+        This works for messages in the suggestions channel, council queue, or public queue.
         """
 
         record = await cls.db.fetchrow(
             """
             SELECT * FROM suggestions
-            WHERE council_message_id = $1 OR public_message_id = $1
+            WHERE suggestions_message_id = $1 OR council_message_id = $1 OR public_message_id = $1
             """,
-            message_id
+            message_id,
         )
 
         if not record:

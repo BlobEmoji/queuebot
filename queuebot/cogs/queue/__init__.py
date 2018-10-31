@@ -142,16 +142,10 @@ class BlobQueue(Cog):
 
         animated = queue_file.filename.endswith(".gif")
 
-        queue = self.bot.get_channel(self.config.council_queue)
-        msg = await queue.send(emoji, file=queue_file)
-        await msg.add_reaction(self.config.approve_emoji)
-        await msg.add_reaction(self.config.deny_emoji)
-
         record = await self.db.fetchrow(
             """
             INSERT INTO suggestions (
                 user_id,
-                council_message_id,
                 emoji_id,
                 emoji_name,
                 submission_time,
@@ -160,19 +154,28 @@ class BlobQueue(Cog):
                 note
             )
             VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8
+                $1, $2, $3, $4, $5, $6, $7
             )
             RETURNING idx
             """,
             message.author.id,
-            msg.id,
             emoji.id,
             name,
             message.created_at,
             message.id,
             animated,
-            note
+            note,
         )
+
+        embed = discord.Embed(title=f'Suggestion {record["idx"]}', description=note)
+
+        queue = self.bot.get_channel(self.config.council_queue)
+        msg = await queue.send(emoji, file=queue_file, embed=embed)
+
+        await msg.add_reaction(self.config.approve_emoji)
+        await msg.add_reaction(self.config.deny_emoji)
+
+        await self.db.execute('UPDATE suggestions SET council_message_id = $1 WHERE idx = $2', msg.id, record['idx'])
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
         buffer.seek(0)
@@ -187,6 +190,24 @@ class BlobQueue(Cog):
 
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED.format(suggestion=emoji))
+
+    async def on_raw_message_edit(self, payload: raw_models.RawMessageUpdateEvent):
+        try:
+            content = payload.data['content']
+        except KeyError:
+            return
+
+        try:
+            suggestion = await Suggestion.get_from_message(payload.message_id)
+        except Suggestion.NotFound:
+            return
+
+        match = NOTE_RE.search(content)
+
+        if match is None:
+            return
+
+        await suggestion.update_note(match.groups()[0][:140])
 
     async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
         if payload.user_id == self.bot.user.id or not self.is_vote(payload.emoji, payload.channel_id):
