@@ -454,7 +454,6 @@ class Suggestion:
         await self.db.execute('UPDATE suggestions SET note = $1 WHERE idx = $2', note, self.idx)
 
         if self.is_in_public_queue:
-            log.debug('aa')
             return
 
         channel = self.bot.get_channel(self.bot.config.council_queue)
