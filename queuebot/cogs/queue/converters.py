@@ -11,7 +11,7 @@ class PartialSuggestionConverter(commands.Converter):
         try:
             sugg_id = int(argument)
             suggestion = await Suggestion.get_from_id(sugg_id)
-            return suggestion.record["idx"], suggestion.emoji_url
+            return suggestion.idx, suggestion.emoji_url
         except (ValueError, Suggestion.NotFound):
             try:
                 emoji = await commands.PartialEmojiConverter().convert(ctx, argument)

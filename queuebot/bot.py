@@ -68,6 +68,7 @@ class Queuebot(commands.Bot):
         logger.info('Ready! Logged in as %s (%d)', self.user, self.user.id)
 
     async def log(self, content, **kwargs) -> typing.Union[discord.Message, None]:
+        """Log a message to the configured bot logging channel."""
         timestamp = f'`[{datetime.datetime.utcnow().strftime("%H:%M")}]`'
         channel = self.get_channel(self.config.bot_log)
         if not channel:

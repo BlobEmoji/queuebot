@@ -9,7 +9,7 @@ import discord
 from discord import raw_models
 
 from queuebot.bot import Queuebot
-from queuebot.configuration import config_from_file
+from queuebot.config import config_from_file
 
 if os.name != "nt":
     import uvloop

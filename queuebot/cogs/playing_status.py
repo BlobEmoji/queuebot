@@ -37,10 +37,11 @@ class PlayingStatus(Cog):
         """Return a random council member."""
         council_role_id = list(self.bot.council_roles)[0]
         council_role = discord.utils.get(self.bot.blob_emoji.roles, id=council_role_id)
-        online_council_members = list(filter(
-            lambda member: member.status is not discord.Status.offline,
-            council_role.members
-        ))
+        online_council_members = [
+            member
+            for member in council_role.members
+            if member.status is not discord.Status.offline
+        ]
         return random.choice(online_council_members)
 
     async def rotate_forever(self):

@@ -25,8 +25,8 @@ NAME_RE = re.compile(r'(\w{2,32}):?\d?')
 NOTE_RE = re.compile(r'- (.+)$')
 
 # Matches all characters that can't be an emoji name
-SAFETY_RE = re.compile(r'[^a-zA-Z0-9_]')
-clean_emoji_name = functools.partial(SAFETY_RE.sub, "_")
+INVALID_EMOJI_NAME_RE = re.compile(r'[^a-zA-Z0-9_]')
+clean_emoji_name = functools.partial(INVALID_EMOJI_NAME_RE.sub, "_")
 
 # Different vs patterns; Compact = Original, Verbose = Issue #32
 COMPACT_VS_JOINER = " \N{SQUARED VS} "
@@ -48,7 +48,12 @@ class BlobQueue(Cog):
         self.vs_lock = asyncio.Lock()
 
     def is_vote(self, emoji: discord.PartialEmoji, channel_id: int) -> bool:
-        """Checks whether an emoji is the approve or deny emoji and a channel is a suggestion processing channel."""
+        """Determine if an emoji and channel ID are related to the suggestion flow.
+
+        This method checks whether the emoji is the designated "approve" or
+        "deny" emoji, and whether the supplied channel ID is a designated
+        suggestion processing channel (private or public queue).
+        """
         if emoji.id is None:
             return False  # not a custom emoji
 
@@ -57,12 +62,13 @@ class BlobQueue(Cog):
 
         return channel_id in [self.config.council_queue, self.config.approval_queue]
 
-    async def on_message(self, message: discord.Message):
-        """Handles messages sent in the suggestions channel."""
-        if message.channel.id != self.config.suggestions_channel or message.author == self.bot.user:
-            return
+    async def handle_suggestion_message(self, message: discord.Message):
+        """Handle a new message being posted in the suggestions channel."""
 
         async def respond(response: str) -> discord.Message:
+            """A helper function that sends a DM to the user, falling back to
+            sending a temporary message in the channel if we can't.
+            """
             try:
                 return await message.author.send(response)
             except discord.HTTPException:
@@ -92,9 +98,10 @@ class BlobQueue(Cog):
         except discord.HTTPException:
             await message.delete()
 
-            log = self.bot.get_channel(self.config.bot_log)
-            logger.info(f"A suggestion by {message.author.id} was not processed due to lack of emoji or guild slots.")
-            await log.send("\N{WARNING SIGN} Couldn't process a suggestion due to having no free emoji or guild slots.")
+            await self.bot.log(
+                "\N{WARNING SIGN} I couldn't process a suggestion because due "
+                "to having no free emoji or guild slots."
+            )
 
             await message.author.send(BOT_BROKEN_MSG)
             return
@@ -115,7 +122,10 @@ class BlobQueue(Cog):
         else:
             note = None
 
-        logger.debug('Message content: "%s", detected name: "%s", detected note: "%s"', message.content, name, note)
+        logger.debug(
+            'Message content: "%s", detected name: "%s", detected note: "%s"',
+            message.content, name, note,
+        )
 
         buffer_content = buffer.read()
 
@@ -129,14 +139,15 @@ class BlobQueue(Cog):
             name=clean_emoji_name(name), image=buffer_content, reason='new blob suggestion'
         )
 
-        logger.info(f"Created new emoji by name {name} in guild {guild.id}.")
+        logger.info(f'Created new emoji by name {name} in guild {guild.id}.')
 
-        buffer.seek(0)  # seek back again for test image impl
+        buffer.seek(0)  # seek back again for test image rendering
 
         try:
             emoji_im = Image.open(buffer)
-        except OSError:
+        except OSError as error:
             queue_file = None  # fallback
+            logger.warning('Failed to open the emoji as an image: %s', error)
         else:
             queue_file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
 
@@ -178,9 +189,12 @@ class BlobQueue(Cog):
         await self.db.execute('UPDATE suggestions SET council_message_id = $1 WHERE idx = $2', msg.id, record['idx'])
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
+
+        # Calculate the SHA256 hash of the emoji image.
         buffer.seek(0)
         file_hash = hashlib.sha256(buffer.read()).hexdigest()
         buffer.seek(0)
+
         log = self.bot.get_channel(self.config.suggestions_log)
         await log.send(
             (f'**Submission #{record["idx"]}**\n\n:{name}: by `{name_id(message.author)}`\n'
@@ -191,7 +205,14 @@ class BlobQueue(Cog):
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED.format(suggestion=emoji))
 
+    async def on_message(self, message: discord.Message):
+        if message.channel.id != self.config.suggestions_channel or message.author == self.bot.user:
+            return
+
+        await self.handle_suggestion_message(message)
+
     async def on_raw_message_edit(self, payload: raw_models.RawMessageUpdateEvent):
+        """Detect edits to a suggestion's message and updates the note accordingly."""
         try:
             content = payload.data['content']
         except KeyError:
@@ -209,35 +230,40 @@ class BlobQueue(Cog):
 
         await suggestion.update_note(match.groups()[0][:140])
 
-    async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
-        if payload.user_id == self.bot.user.id or not self.is_vote(payload.emoji, payload.channel_id):
+    async def process_raw_reaction(self, payload, vote_type: Suggestion.VoteType):
+        """Process a raw reaction payload."""
+        # only process reactions that actually count as votes
+        is_vote = self.is_vote(payload.emoji, payload.channel_id)
+        if payload.user_id == self.bot.user.id or not is_vote:
             return
 
-        logger.debug('Received reaction add.')
+        logger.debug('Received raw reaction payload: %s', payload)
 
         async with self.voting_lock:
-            s = await Suggestion.get_from_message(payload.message_id)
-            await s.process_vote(payload.emoji, Suggestion.VoteType.YAY, payload.message_id, payload.user_id)
+            suggestion = await Suggestion.get_from_message(payload.message_id)
+            await suggestion.process_vote(
+                payload.emoji,
+                vote_type,
+                payload.message_id,
+                payload.user_id,
+            )
+
+    async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
+        await self.process_raw_reaction(payload, Suggestion.VoteType.YAY)
 
     async def on_raw_reaction_remove(self, payload: raw_models.RawReactionActionEvent):
-        if payload.user_id == self.bot.user.id or not self.is_vote(payload.emoji, payload.channel_id):
-            return
-
-        logger.debug('Received reaction remove.')
-
-        async with self.voting_lock:
-            s = await Suggestion.get_from_message(payload.message_id)
-            await s.process_vote(payload.emoji, Suggestion.VoteType.NAY, payload.message_id, payload.user_id)
+        await self.process_raw_reaction(payload, Suggestion.VoteType.NAY)
 
     def has_emoji_slots(self, guild: discord.Guild) -> bool:
+        """Retuern whether a guild has emoji slots we can use."""
         return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
 
     async def get_buffer_guild(self) -> discord.Guild:
-        """
-        Get a guild the bot can upload a temporary emoji to.
+        """Get a guild the bot can upload a temporary emoji to.
 
-        This returns a guild the bot has the manage_emojis permissions in and has fewer than 50 custom emojis.
-        If no suitable guild is found a new one is created.
+        This returns a guild the bot has the manage_emojis permissions in and
+        has fewer than 50 custom emojis. If no suitable guild is found, a new
+        one is created.
 
         Raises
         ------
@@ -249,7 +275,7 @@ class BlobQueue(Cog):
         if guild is not None:
             return guild
 
-        logger.info("Creating new buffer emoji guild..")
+        logger.info('Creating new buffer emoji guild...')
         return await self.bot.create_guild('BlobQueue Emoji Buffer')
 
     @commands.command()
@@ -382,7 +408,7 @@ class BlobQueue(Cog):
 
     @commands.command()
     async def revoke(self, ctx):
-        """User-facing: DMs the user a wizard for revoking their own suggestions."""
+        """Messages the user a wizard for revoking their suggestions."""
 
         # delete the message to prevent spam
         if ctx.guild:
@@ -463,7 +489,7 @@ class BlobQueue(Cog):
         await ctx.send(embed=embed)
 
     @staticmethod
-    def generate_test_frame(emoji_image: Image.Image):
+    def generate_test_frame(emoji_image: Image.Image) -> Image.Image:
         max_dimension = max(emoji_image.size)
         scalar = 128 / max_dimension
         new_sizing = int(emoji_image.width * scalar), int(emoji_image.height * scalar)
@@ -564,25 +590,28 @@ class BlobQueue(Cog):
         """, limit)]
 
         table = Table('#', 'Name', 'Submitted By', 'Points', 'Status')
-        for s in suggestions:
-            user = ctx.bot.get_user(s.record['user_id'])
-            submitted_by = f'{user} {user.id}' if user else str(s.record['user_id'])
+        for suggestion in suggestions:
+            user = ctx.bot.get_user(suggestion.user_id)
+            submitted_by = f'{user} {user.id}' if user else str(suggestion.user_id)
 
-            if s.is_denied:
+            if suggestion.is_denied:
                 status = 'Denied'
-            elif s.is_in_public_queue:
-                status = 'AQ'  # The "public queue" is actually called the "approval queue".
+            elif suggestion.is_in_public_queue:
+                status = 'Approval Queue'  # The "public queue" is actually called the "approval queue".
             else:
-                status = 'CQ'
+                status = 'Council Queue'
 
             table.add_row(
-                str(s.idx), ':' + s.record['emoji_name'] + ':', submitted_by,
-                f'▲ {s.record["upvotes"]} / ▼ {s.record["downvotes"]}',
-                status
+                str(suggestion.idx),
+                f':{suggestion.emoji_name}:',
+                submitted_by,
+                f'▲ {suggestion.upvotes} / ▼ {suggestion.downvotes}',
+                status,
             )
 
         paginator = commands.Paginator()
-        for line in (await table.render(ctx.bot.loop)).split('\n'):
+        rendered_table = await table.render(ctx.bot.loop)
+        for line in rendered_table.splitlines():
             paginator.add_line(line)
 
         for page in paginator.pages:

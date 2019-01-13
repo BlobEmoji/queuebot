@@ -1,7 +1,6 @@
 # QueueBot
-queuebot.log
-config.py
-config.yaml
+/queuebot.log
+/config.yaml
 /data
 
 # IDEA
