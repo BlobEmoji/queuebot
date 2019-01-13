@@ -249,10 +249,10 @@ class BlobQueue(Cog):
             )
 
     async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
-        await self.process_raw_reaction(payload, Suggestion.VoteType.YAY)
+        await self.process_raw_reaction(payload, Suggestion.VoteType.CAST)
 
     async def on_raw_reaction_remove(self, payload: raw_models.RawReactionActionEvent):
-        await self.process_raw_reaction(payload, Suggestion.VoteType.NAY)
+        await self.process_raw_reaction(payload, Suggestion.VoteType.REVOKE)
 
     def has_emoji_slots(self, guild: discord.Guild) -> bool:
         """Retuern whether a guild has emoji slots we can use."""

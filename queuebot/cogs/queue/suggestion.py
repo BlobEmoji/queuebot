@@ -25,13 +25,13 @@ class Suggestion:
         """An exception thrown when a suggestion was not found."""
 
     class VoteType(enum.Enum):
-        """Signifies whether a vote will go against or for a suggestion."""
-        YAY = enum.auto()
-        NAY = enum.auto()
+        """An enum that represents whether a vote is being added (cast) or being removed (revoked)."""
+        CAST = enum.auto()
+        REVOKE = enum.auto()
 
         @property
         def operator(self):
-            return '+' if self is self.YAY else '-'
+            return '+' if self is self.CAST else '-'
 
     class OperationError(Exception):
         pass
@@ -196,7 +196,7 @@ class Suggestion:
             DO UPDATE SET
             {column} = $3::BOOLEAN
             """,
-            self.idx, who, vote_type == vote_type.YAY
+            self.idx, who, vote_type == vote_type.CAST
         )
 
         await self.check_council_votes()
