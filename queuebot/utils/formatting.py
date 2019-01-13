@@ -141,7 +141,7 @@ class Table:
 
         return "\n".join(drawn)
 
-    def render(self, loop: asyncio.AbstractEventLoop=None):
+    def render(self, loop: asyncio.AbstractEventLoop = None):
         """:coro: Returns a rendered version of the table."""
         loop = loop or asyncio.get_event_loop()
 
