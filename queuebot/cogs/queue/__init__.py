@@ -22,7 +22,7 @@ from queuebot.utils.messages import *  # noqa: ignore=F401
 
 # Matches the full string or the name of a custom emoji (since replacements for those might be posted).
 NAME_RE = re.compile(r'(\w{2,32}):?\d?')
-NOTE_RE = re.compile(r'- (.+)$')
+NOTE_RE = re.compile(r'- (.+)$', re.DOTALL)
 
 # Matches all characters that can't be an emoji name
 INVALID_EMOJI_NAME_RE = re.compile(r'[^a-zA-Z0-9_]')
