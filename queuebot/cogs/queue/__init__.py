@@ -23,6 +23,7 @@ from queuebot.utils.messages import *  # noqa: ignore=F401
 # Matches the full string or the name of a custom emoji (since replacements for those might be posted).
 NAME_RE = re.compile(r'(\w{2,32}):?\d?')
 NOTE_RE = re.compile(r'- (.+)$', re.DOTALL)
+NOTE_LENGTH = 1000
 
 # Matches all characters that can't be an emoji name
 INVALID_EMOJI_NAME_RE = re.compile(r'[^a-zA-Z0-9_]')
@@ -118,7 +119,7 @@ class BlobQueue(Cog):
         note_match = NOTE_RE.search(message.content)
 
         if note_match is not None:
-            note = note_match.groups()[0][:140]
+            note = note_match.groups()[0][:NOTE_LENGTH]
         else:
             note = None
 
@@ -228,7 +229,7 @@ class BlobQueue(Cog):
         if match is None:
             return
 
-        await suggestion.update_note(match.groups()[0][:140])
+        await suggestion.update_note(match.groups()[0][:NOTE_LENGTH])
 
     async def process_raw_reaction(self, payload, vote_type: Suggestion.VoteType):
         """Process a raw reaction payload."""
