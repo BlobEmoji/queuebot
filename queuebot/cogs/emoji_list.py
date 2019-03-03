@@ -28,6 +28,7 @@ def format_emoji_list(guild: discord.Guild) -> List[str]:
 
 
 class EmojiList(Cog):
+    @Cog.listener()
     async def on_guild_emojis_update(self, guild: discord.Guild, *_):
         if guild.id not in self.config.blob_guilds:
             return

@@ -36,6 +36,7 @@ class Errors(Cog):
     async def on_error(self, event_method, *args, **kwargs):
         logger.exception('Error in on_%s:', event_method)
 
+    @Cog.listener()
     async def on_command_error(self, ctx: Context, exception):
         # TODO: Handle more errors.
         if isinstance(exception, IGNORED_ERRORS):

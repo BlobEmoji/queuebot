@@ -208,12 +208,14 @@ class BlobQueue(Cog):
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED.format(suggestion=emoji))
 
+    @Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.channel.id != self.config.suggestions_channel or message.author == self.bot.user:
             return
 
         await self.handle_suggestion_message(message)
 
+    @Cog.listener()
     async def on_raw_message_edit(self, payload: raw_models.RawMessageUpdateEvent):
         """Detect edits to a suggestion's message and updates the note accordingly."""
         try:
@@ -251,9 +253,11 @@ class BlobQueue(Cog):
                 payload.user_id,
             )
 
+    @Cog.listener()
     async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
         await self.process_raw_reaction(payload, Suggestion.VoteType.CAST)
 
+    @Cog.listener()
     async def on_raw_reaction_remove(self, payload: raw_models.RawReactionActionEvent):
         await self.process_raw_reaction(payload, Suggestion.VoteType.REVOKE)
 
