@@ -94,8 +94,10 @@ class BlobQueue(Cog):
         await attachment.save(buffer)
         buffer.seek(0)
 
+        animated = attachment.filename.lower().endswith('.gif')
+
         try:
-            guild = await self.get_buffer_guild()
+            guild = await self.get_buffer_guild(animated=animated)
         except discord.HTTPException:
             await message.delete()
 
@@ -255,16 +257,22 @@ class BlobQueue(Cog):
     async def on_raw_reaction_remove(self, payload: raw_models.RawReactionActionEvent):
         await self.process_raw_reaction(payload, Suggestion.VoteType.REVOKE)
 
-    def has_emoji_slots(self, guild: discord.Guild) -> bool:
+    def has_emoji_slots(self, guild: discord.Guild, animated) -> bool:
         """Retuern whether a guild has emoji slots we can use."""
-        return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
 
-    async def get_buffer_guild(self) -> discord.Guild:
-        """Get a guild the bot can upload a temporary emoji to.
+        return guild.owner_id == self.bot.user.id and sum(x.animated == animated for x in guild.emojis) < 50
 
-        This returns a guild the bot has the manage_emojis permissions in and
-        has fewer than 50 custom emojis. If no suitable guild is found, a new
-        one is created.
+    async def get_buffer_guild(self, animated) -> discord.Guild:
+        """
+        Get a guild the bot can upload a temporary emoji to.
+
+        This either returns or creates a new guild the bot owns,
+        and has fewer than 50 of the designated type of emoji slots free.
+
+        Parameters
+        ----------
+        animated : bool
+            Whether the buffer guild needs a static or animated emoji slot.
 
         Raises
         ------
@@ -272,7 +280,8 @@ class BlobQueue(Cog):
             The bot is in more than 10 guilds total while creating a new guild.
         """
 
-        guild = discord.utils.find(self.has_emoji_slots, self.bot.guilds)
+        guild = discord.utils.find(functools.partial(self.has_emoji_slots, animated=animated), self.bot.guilds)
+
         if guild is not None:
             return guild
 
@@ -283,12 +292,25 @@ class BlobQueue(Cog):
     @commands.is_owner()
     async def buffer_info(self, ctx):
         """Shows information about buffer guilds."""
-        try:
-            guild = await self.get_buffer_guild()
-        except discord.HTTPException:
-            await ctx.send('**Error!** No available buffer guild.')
 
-        await ctx.send(f'Current buffer guild: {guild.name} ({len(guild.emojis)}/50 full)')
+        try:
+            static = await self.get_buffer_guild(animated=False)
+        except discord.HTTPException:
+            static = None
+
+        try:
+            animated = await self.get_buffer_guild(animated=True)
+        except discord.HTTPException:
+            animated = None
+
+        def describe(guild, animated_):
+            if guild is None:
+                return 'No suitable guild found'
+
+            count = sum(x.animated == animated_ for x in guild.emojis)
+            return f'{count}/50 emoji'
+
+        await ctx.send(f'Static buffer: {describe(static, False)}, animated buffer: {describe(animated, True)}')
 
     @commands.command(aliases=['accept'])
     @is_council()
@@ -352,10 +374,13 @@ class BlobQueue(Cog):
 
                 temp_emotes = []
                 for index, this_emoji in enumerate(emoji):
-                    buffer_guild = await self.get_buffer_guild()
+                    emoji_url = this_emoji[2]
+                    animated = emoji_url.endswith('.gif')
+
+                    buffer_guild = await self.get_buffer_guild(animated=animated)
                     emoji_name = clean_emoji_name(f"{this_emoji[3][0:30]}_{index+1}")
 
-                    async with self.bot.session.get(this_emoji[2]) as resp:
+                    async with self.bot.session.get(emoji_url) as resp:
                         temp_emotes.append(await buffer_guild.create_custom_emoji(
                             name=emoji_name, image=await resp.read(), reason='temp blob for vs'
                         ))
