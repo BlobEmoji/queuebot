@@ -210,7 +210,8 @@ class BlobQueue(Cog):
         **Hash:** `{file_hash}`
         """
 
-        await self.bot.get_channel(self.config.suggestions_log).send(inspect.cleandoc(msg))
+        channel = self.bot.get_channel(self.config.suggestions_log)
+        await channel.send(inspect.cleandoc(msg), file=discord.File(buffer, filename=attachment.filename))
 
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED.format(suggestion=emoji))
