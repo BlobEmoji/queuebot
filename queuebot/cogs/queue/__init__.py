@@ -200,7 +200,7 @@ class BlobQueue(Cog):
 
         log = self.bot.get_channel(self.config.suggestions_log)
         await log.send(
-            (f'**Submission #{record["idx"]}**\n\n:{name}: by `{name_id(message.author)}`\n'
+            (f'**Submission #{record["idx"]}**\n\n:{name}: by `{name_id(message.author)} {message.author.mention}`\n'
              f'Filename: {attachment.filename}\nHash: `{file_hash}`').replace('@', '@\u200b'),
             file=discord.File(buffer, filename=attachment.filename)
         )
