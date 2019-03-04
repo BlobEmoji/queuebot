@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import hashlib
+import inspect
 import io
 import logging
 import re
@@ -148,15 +149,17 @@ class BlobQueue(Cog):
 
         try:
             emoji_im = Image.open(buffer)
+            width, height = emoji_im.size
         except OSError as error:
             queue_file = None  # fallback
+            width, height = None, None
             logger.warning('Failed to open the emoji as an image: %s', error)
         else:
             queue_file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
 
         animated = queue_file.filename.endswith(".gif")
 
-        record = await self.db.fetchrow(
+        suggestion_id = await self.db.fetchval(
             """
             INSERT INTO suggestions (
                 user_id,
@@ -181,7 +184,7 @@ class BlobQueue(Cog):
             note,
         )
 
-        embed = discord.Embed(title=f'Suggestion {record["idx"]}', description=note)
+        embed = discord.Embed(title=f'Suggestion {suggestion_id}', description=note)
 
         queue = self.bot.get_channel(self.config.council_queue)
         msg = await queue.send(emoji, file=queue_file, embed=embed)
@@ -189,7 +192,7 @@ class BlobQueue(Cog):
         await msg.add_reaction(self.config.approve_emoji)
         await msg.add_reaction(self.config.deny_emoji)
 
-        await self.db.execute('UPDATE suggestions SET council_message_id = $1 WHERE idx = $2', msg.id, record['idx'])
+        await self.db.execute('UPDATE suggestions SET council_message_id = $1 WHERE idx = $2', msg.id, suggestion_id)
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
 
@@ -198,12 +201,16 @@ class BlobQueue(Cog):
         file_hash = hashlib.sha256(buffer.read()).hexdigest()
         buffer.seek(0)
 
-        log = self.bot.get_channel(self.config.suggestions_log)
-        await log.send(
-            (f'**Submission #{record["idx"]}**\n\n:{name}: by `{name_id(message.author)}` {message.author.mention}\n'
-             f'Filename: {attachment.filename}\nHash: `{file_hash}`').replace('@', '@\u200b'),
-            file=discord.File(buffer, filename=attachment.filename)
-        )
+        msg = f"""
+        **Submission {suggestion_id}** - `{name_id(message.author)}` {message.author.mention}
+
+        **Name:** {name}
+        **Note:** {note}
+        **File:** `{attachment.filename}`, height: {height}, width: {width}
+        **Hash:** `{file_hash}`
+        """
+
+        await self.bot.get_channel(self.config.suggestions_log).send(inspect.cleandoc(msg))
 
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED.format(suggestion=emoji))
