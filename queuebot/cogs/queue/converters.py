@@ -1,5 +1,6 @@
 import asyncio
 
+import asyncpg
 import yarl
 from discord.ext import commands
 
@@ -40,7 +41,7 @@ class PublicQueueOrEmojiConverter(commands.Converter):
 
             return suggestion, suggestion.idx, suggestion.emoji_url, suggestion.emoji_name
 
-        except (ValueError, Suggestion.NotFound):
+        except (ValueError, Suggestion.NotFound, asyncpg.DataError):
             pass
 
         emoji = await commands.EmojiConverter().convert(ctx, argument)
