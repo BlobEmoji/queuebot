@@ -1,6 +1,4 @@
 import datetime
-import importlib
-import inspect
 import logging
 import typing
 from pathlib import Path
@@ -10,7 +8,6 @@ import discord
 from asyncpg.pool import Pool
 from discord.ext import commands
 
-from queuebot.cog import Cog
 from queuebot.context import Context
 
 logger = logging.getLogger(__name__)
