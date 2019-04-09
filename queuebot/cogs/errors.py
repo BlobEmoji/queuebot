@@ -67,3 +67,7 @@ class Errors(Cog):
                 pass
         elif isinstance(exception, commands.UserInputError):
             await ctx.send(f'{red_tick} Input error: {exception}')
+
+
+def setup(bot):
+    bot.add_cog(Errors(bot))

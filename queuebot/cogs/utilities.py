@@ -46,3 +46,7 @@ class Utilities(Cog):
 
         rendered = await table.render(ctx.bot.loop)
         await ctx.send('```\n' + rendered + '\n```')
+
+
+def setup(bot):
+    bot.add_cog(Utilities(bot))

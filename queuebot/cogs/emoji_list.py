@@ -49,3 +49,7 @@ class EmojiList(Cog):
 
         for idx, message in enumerate(messages):
             await message.edit(content=formatted[idx])
+
+
+def setup(bot):
+    bot.add_cog(EmojiList(bot))

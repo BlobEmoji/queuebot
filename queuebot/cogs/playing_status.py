@@ -55,3 +55,7 @@ class PlayingStatus(Cog):
         """Change the bot's presence to a random activity."""
         activity = self.generate_activity()
         await self.bot.change_presence(activity=activity)
+
+
+def setup(bot):
+    bot.add_cog(PlayingStatus(bot))

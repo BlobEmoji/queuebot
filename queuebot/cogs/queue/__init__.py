@@ -654,3 +654,7 @@ class BlobQueue(Cog):
 
         for page in paginator.pages:
             await ctx.send(page)
+
+
+def setup(bot):
+    bot.add_cog(BlobQueue(bot))

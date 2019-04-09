@@ -91,25 +91,6 @@ class Queuebot(commands.Bot):
         context = await self.get_context(msg, cls=Context)
         await self.invoke(context)
 
-    def load_extension(self, name: str):
-        extension_module = importlib.import_module(name)
-
-        # Find Cog subclasses in the module.
-        cogs = inspect.getmembers(
-            extension_module, predicate=lambda obj: inspect.isclass(obj) and issubclass(obj, Cog) and obj is not Cog
-        )
-
-        # Add all Cog subclasses.
-        for _, cog in cogs:
-            logger.info('Automatically adding cog: %s', cog.__name__)
-            self.add_cog(cog(self))
-
-        # Call setup(), if there is one.
-        if hasattr(extension_module, 'setup'):
-            extension_module.setup(self)
-
-        self.extensions[name] = extension_module
-
     def discover_exts(self, directory: str):
         """Loads all extensions from a directory."""
         ignore = {'__pycache__', '__init__'}
