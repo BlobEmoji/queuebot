@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import hashlib
+import inspect
 import io
 import logging
 import re
@@ -94,8 +95,10 @@ class BlobQueue(Cog):
         await attachment.save(buffer)
         buffer.seek(0)
 
+        animated = attachment.filename.lower().endswith('.gif')
+
         try:
-            guild = await self.get_buffer_guild()
+            guild = await self.get_buffer_guild(animated=animated)
         except discord.HTTPException:
             await message.delete()
 
@@ -146,15 +149,17 @@ class BlobQueue(Cog):
 
         try:
             emoji_im = Image.open(buffer)
+            width, height = emoji_im.size
         except OSError as error:
             queue_file = None  # fallback
+            width, height = None, None
             logger.warning('Failed to open the emoji as an image: %s', error)
         else:
             queue_file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
 
         animated = queue_file.filename.endswith(".gif")
 
-        record = await self.db.fetchrow(
+        suggestion_id = await self.db.fetchval(
             """
             INSERT INTO suggestions (
                 user_id,
@@ -179,7 +184,7 @@ class BlobQueue(Cog):
             note,
         )
 
-        embed = discord.Embed(title=f'Suggestion {record["idx"]}', description=note)
+        embed = discord.Embed(title=f'Suggestion {suggestion_id}', description=note)
 
         queue = self.bot.get_channel(self.config.council_queue)
         msg = await queue.send(emoji, file=queue_file, embed=embed)
@@ -187,7 +192,7 @@ class BlobQueue(Cog):
         await msg.add_reaction(self.config.approve_emoji)
         await msg.add_reaction(self.config.deny_emoji)
 
-        await self.db.execute('UPDATE suggestions SET council_message_id = $1 WHERE idx = $2', msg.id, record['idx'])
+        await self.db.execute('UPDATE suggestions SET council_message_id = $1 WHERE idx = $2', msg.id, suggestion_id)
 
         # Log all suggestions to a special channel to keep original files and have history for moderation purposes.
 
@@ -196,22 +201,29 @@ class BlobQueue(Cog):
         file_hash = hashlib.sha256(buffer.read()).hexdigest()
         buffer.seek(0)
 
-        log = self.bot.get_channel(self.config.suggestions_log)
-        await log.send(
-            (f'**Submission #{record["idx"]}**\n\n:{name}: by `{name_id(message.author)}`\n'
-             f'Filename: {attachment.filename}\nHash: `{file_hash}`').replace('@', '@\u200b'),
-            file=discord.File(buffer, filename=attachment.filename)
-        )
+        msg = f"""
+        **Submission {suggestion_id}** - `{name_id(message.author)}` {message.author.mention}
+
+        **Name:** {name}
+        **Note:** {note}
+        **File:** `{attachment.filename}`, height: {height}, width: {width}
+        **Hash:** `{file_hash}`
+        """
+
+        channel = self.bot.get_channel(self.config.suggestions_log)
+        await channel.send(inspect.cleandoc(msg), file=discord.File(buffer, filename=attachment.filename))
 
         await message.add_reaction('\N{EYES}')
         await respond(SUGGESTION_RECEIVED.format(suggestion=emoji))
 
+    @Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.channel.id != self.config.suggestions_channel or message.author == self.bot.user:
             return
 
         await self.handle_suggestion_message(message)
 
+    @Cog.listener()
     async def on_raw_message_edit(self, payload: raw_models.RawMessageUpdateEvent):
         """Detect edits to a suggestion's message and updates the note accordingly."""
         try:
@@ -249,22 +261,30 @@ class BlobQueue(Cog):
                 payload.user_id,
             )
 
+    @Cog.listener()
     async def on_raw_reaction_add(self, payload: raw_models.RawReactionActionEvent):
         await self.process_raw_reaction(payload, Suggestion.VoteType.CAST)
 
+    @Cog.listener()
     async def on_raw_reaction_remove(self, payload: raw_models.RawReactionActionEvent):
         await self.process_raw_reaction(payload, Suggestion.VoteType.REVOKE)
 
-    def has_emoji_slots(self, guild: discord.Guild) -> bool:
+    def has_emoji_slots(self, guild: discord.Guild, animated) -> bool:
         """Retuern whether a guild has emoji slots we can use."""
-        return guild.owner_id == self.bot.user.id and len(guild.emojis) < 50
 
-    async def get_buffer_guild(self) -> discord.Guild:
-        """Get a guild the bot can upload a temporary emoji to.
+        return guild.owner_id == self.bot.user.id and sum(x.animated == animated for x in guild.emojis) < 50
 
-        This returns a guild the bot has the manage_emojis permissions in and
-        has fewer than 50 custom emojis. If no suitable guild is found, a new
-        one is created.
+    async def get_buffer_guild(self, animated) -> discord.Guild:
+        """
+        Get a guild the bot can upload a temporary emoji to.
+
+        This either returns or creates a new guild the bot owns,
+        and has fewer than 50 of the designated type of emoji slots free.
+
+        Parameters
+        ----------
+        animated : bool
+            Whether the buffer guild needs a static or animated emoji slot.
 
         Raises
         ------
@@ -272,7 +292,8 @@ class BlobQueue(Cog):
             The bot is in more than 10 guilds total while creating a new guild.
         """
 
-        guild = discord.utils.find(self.has_emoji_slots, self.bot.guilds)
+        guild = discord.utils.find(functools.partial(self.has_emoji_slots, animated=animated), self.bot.guilds)
+
         if guild is not None:
             return guild
 
@@ -283,12 +304,25 @@ class BlobQueue(Cog):
     @commands.is_owner()
     async def buffer_info(self, ctx):
         """Shows information about buffer guilds."""
-        try:
-            guild = await self.get_buffer_guild()
-        except discord.HTTPException:
-            await ctx.send('**Error!** No available buffer guild.')
 
-        await ctx.send(f'Current buffer guild: {guild.name} ({len(guild.emojis)}/50 full)')
+        try:
+            static = await self.get_buffer_guild(animated=False)
+        except discord.HTTPException:
+            static = None
+
+        try:
+            animated = await self.get_buffer_guild(animated=True)
+        except discord.HTTPException:
+            animated = None
+
+        def describe(guild, animated_):
+            if guild is None:
+                return 'No suitable guild found'
+
+            count = sum(x.animated == animated_ for x in guild.emojis)
+            return f'{count}/50 emoji'
+
+        await ctx.send(f'Static buffer: {describe(static, False)}, animated buffer: {describe(animated, True)}')
 
     @commands.command(aliases=['accept'])
     @is_council()
@@ -352,10 +386,13 @@ class BlobQueue(Cog):
 
                 temp_emotes = []
                 for index, this_emoji in enumerate(emoji):
-                    buffer_guild = await self.get_buffer_guild()
+                    emoji_url = this_emoji[2]
+                    animated = emoji_url.endswith('.gif')
+
+                    buffer_guild = await self.get_buffer_guild(animated=animated)
                     emoji_name = clean_emoji_name(f"{this_emoji[3][0:30]}_{index+1}")
 
-                    async with self.bot.session.get(this_emoji[2]) as resp:
+                    async with self.bot.session.get(emoji_url) as resp:
                         temp_emotes.append(await buffer_guild.create_custom_emoji(
                             name=emoji_name, image=await resp.read(), reason='temp blob for vs'
                         ))

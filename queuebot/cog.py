@@ -1,8 +1,17 @@
 __all__ = ['Cog']
 
 
-class Cog:
+from discord.ext import commands
+
+
+class Cog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config = bot.config
-        self.db = bot.db
+
+    @property
+    def config(self):
+        return self.bot.config
+
+    @property
+    def db(self):
+        return self.bot.db
