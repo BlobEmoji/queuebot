@@ -207,7 +207,7 @@ class Suggestion:
         council_queue = self.bot.get_channel(self.bot.config.council_queue)
 
         # Delete the message in the council queue (cleanup).
-        council_message = await council_queue.get_message(self.council_message_id)
+        council_message = await council_queue.fetch_message(self.council_message_id)
         await council_message.delete()
 
         # Set this suggestion's council queue message ID to null.
@@ -315,7 +315,7 @@ class Suggestion:
 
         public_queue = self.bot.get_channel(self.bot.config.approval_queue)
         try:
-            msg = await public_queue.get_message(self.public_message_id)
+            msg = await public_queue.fetch_message(self.public_message_id)
         except discord.NotFound:
             return
 
@@ -414,7 +414,7 @@ class Suggestion:
         channel = self.bot.get_channel(self.bot.config.suggestions_channel)
 
         try:
-            message = await channel.get_message(message_id)
+            message = await channel.fetch_message(message_id)
             await message.delete()
             log.debug('Removed message %d from suggestions channel.', message.id)
         except discord.HTTPException as exc:
@@ -441,7 +441,7 @@ class Suggestion:
             return
 
         channel = self.bot.get_channel(self.bot.config.council_queue)
-        message = await channel.get_message(self.council_message_id)
+        message = await channel.fetch_message(self.council_message_id)
 
         embed = discord.Embed(title=f'Suggestion {self.idx}', description=note)
         await message.edit(embed=embed)
