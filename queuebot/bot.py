@@ -49,8 +49,8 @@ class Queuebot(commands.Bot):
 
         if id:
             return emoji_id
-        else:
-            return self.get_emoji(emoji_id)
+
+        return self.get_emoji(emoji_id)
 
     async def close(self):
         logger.info('Closing.')
@@ -60,11 +60,12 @@ class Queuebot(commands.Bot):
 
     async def on_ready(self):
         # Grab owner from application info.
-        self.owner = (await self.application_info()).owner
+        if not self.owner:
+            self.owner = (await self.application_info()).owner
 
         logger.info('Ready! Logged in as %s (%d)', self.user, self.user.id)
 
-    async def log(self, content, **kwargs) -> typing.Union[discord.Message, None]:
+    async def log(self, content, **kwargs) -> typing.Optional[discord.Message]:
         """Log a message to the configured bot logging channel."""
         timestamp = f'`[{datetime.datetime.utcnow().strftime("%H:%M")}]`'
         channel = self.get_channel(self.config.bot_log)
