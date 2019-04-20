@@ -13,9 +13,6 @@ def test_links():
 
 
 def test_markdown():
-    assert utils.clean_text("**important**") == r"\*\*important\*\*"
-    assert utils.clean_text(r"C:\etc") == r"C:\\etc"
-
     FakeModel = namedtuple('FakeModel', 'id name')
 
     assert "`" not in utils.name_id(FakeModel(123, 'one ` two ` three'))
