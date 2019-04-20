@@ -4,7 +4,7 @@ stages:
 
 main:
   stage: build
-  image: gorialis/discord.py:alpine-rewrite
+  image: gorialis/discord.py:alpine-master
   services:
     - postgres:10-alpine
   variables:

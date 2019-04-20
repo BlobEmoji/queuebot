@@ -6,6 +6,13 @@
 # IDEA
 .idea
 
+# Visual Studio
+.vs
+
+# Visual Studio Code
+.vscode
+.code
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

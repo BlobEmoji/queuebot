@@ -1,11 +1,9 @@
 """Various utilities."""
 
-# Exported.
+from time import monotonic as _monotonic
+
 from .formatting import *  # noqa: ignore=F401
 from .messages import *  # noqa: ignore=F401
-
-# Internal imports.
-from time import monotonic as _monotonic
 
 
 class Timer:
