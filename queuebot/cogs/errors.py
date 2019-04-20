@@ -30,7 +30,7 @@ class Errors(Cog):
         self.__old_on_error = bot.on_error
         bot.on_error = self.on_error
 
-    def __unload(self):
+    def cog_unload(self):
         self.bot.on_error = self.__old_on_error
 
     async def on_error(self, event_method, *args, **kwargs):

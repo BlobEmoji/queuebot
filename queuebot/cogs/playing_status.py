@@ -20,7 +20,7 @@ class PlayingStatus(Cog):
 
         self.task = bot.loop.create_task(self.rotate_forever())
 
-    def __unload(self):
+    def cog_unload(self):
         self.task.cancel()
 
     def generate_activity(self):
