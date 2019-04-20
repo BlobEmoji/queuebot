@@ -6,7 +6,7 @@ version: 2
 jobs:
   "alpine 3.6":
     docker:
-      - image: gorialis/discord.py:alpine-rewrite
+      - image: gorialis/discord.py:alpine-master
         environment:
           PGDATABASE: postgres
           PGHOST: localhost

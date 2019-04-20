@@ -1,7 +1,6 @@
 asyncpg
-discord.py>=1.0.0a1461
-uvloop
-pillow
-PyYAML
+discord.py>=1.0.0
 jishaku
-yarl<1.2
+Pillow
+PyYAML
+uvloop; sys_platform != "win32" and implementation_name == "cpython"

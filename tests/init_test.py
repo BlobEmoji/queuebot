@@ -2,7 +2,6 @@
 
 import asyncio
 import datetime
-import os
 
 import asyncpg
 import discord
@@ -11,8 +10,11 @@ from discord import raw_models
 from queuebot.bot import Queuebot
 from queuebot.config import config_from_file
 
-if os.name != "nt":
+try:
     import uvloop
+except ImportError:
+    pass
+else:
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 

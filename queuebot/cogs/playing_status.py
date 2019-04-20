@@ -47,7 +47,7 @@ class PlayingStatus(Cog):
     async def rotate_forever(self):
         await self.bot.wait_until_ready()
 
-        while True:
+        while not self.bot.is_closed():
             await self.rotate()
             await asyncio.sleep(60 * 60)
 
