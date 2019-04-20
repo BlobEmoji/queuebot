@@ -5,6 +5,7 @@ import re
 from typing import List, Match
 
 import discord
+from discord.utils import escape_markdown
 
 FORMATTING_RE = re.compile(r"([*_~`\\]|<h)")
 LINK_RE = re.compile(r"(<?https?://\S*)")
@@ -24,23 +25,6 @@ def clean_links(text: str) -> str:
         return fr'\<{match}>' if '<' in match else f'<{match}>'
 
     return LINK_RE.sub(replace, text)
-
-
-def clean_formatting(text: str) -> str:
-    """Escapes markdown, codeblocks and escaped links to show the "original" message to make copy pasting easy."""
-    transforms = {
-        "*": r"\*",
-        "_": r"\_",
-        "~": r"\~",
-        "`": r"\`",
-        "\\": "\\\\"
-    }
-
-    def replace(match: Match) -> str:
-        return transforms.get(match.group())
-
-    text = clean_links(text)
-    return FORMATTING_RE.sub(replace, text)
 
 
 def clean_mentions(channel: discord.TextChannel, text: str) -> str:
@@ -71,8 +55,7 @@ def clean_mentions(channel: discord.TextChannel, text: str) -> str:
 
 def clean_text(channel: discord.TextChannel, text) -> str:
     """Utility method to clean text as often multiple methods get used."""
-    text = clean_formatting(text)
-    return clean_mentions(channel, text)
+    return clean_mentions(channel, escape_markdown(text))
 
 
 def name_id(obj) -> str:
