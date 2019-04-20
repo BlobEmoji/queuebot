@@ -11,20 +11,6 @@ logger = logging.getLogger(__name__)
 
 class Utilities(Cog):
     @commands.command()
-    @commands.is_owner()
-    async def reload(self, ctx: commands.Context):
-        """Reloads all extensions."""
-        try:
-            for name in ctx.bot.to_load:
-                ctx.bot.unload_extension(name)
-                ctx.bot.load_extension(name)
-        except Exception:
-            await ctx.send("An error has occurred while reloading.")
-            logger.exception('Error has occurred while reloading:')
-        else:
-            await ctx.send(f'{ctx.bot.tick()} Reloaded.')
-
-    @commands.command()
     @is_council()
     async def ping(self, ctx: commands.Context):
         """Makes the bot respond with \"Pong!\""""
