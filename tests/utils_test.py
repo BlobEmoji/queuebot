@@ -13,8 +13,8 @@ def test_links():
 
 
 def test_markdown():
-    assert utils.clean_formatting("**important**") == r"\*\*important\*\*"
-    assert utils.clean_formatting(r"C:\etc") == r"C:\\etc"
+    assert utils.clean_text("**important**") == r"\*\*important\*\*"
+    assert utils.clean_text(r"C:\etc") == r"C:\\etc"
 
     FakeModel = namedtuple('FakeModel', 'id name')
 
