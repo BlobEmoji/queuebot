@@ -386,7 +386,7 @@ class BlobQueue(Cog):
 
                 temp_emotes = []
                 for index, this_emoji in enumerate(emoji):
-                    emoji_url = this_emoji[2]
+                    emoji_url = str(this_emoji[2])
                     animated = emoji_url.endswith('.gif')
 
                     buffer_guild = await self.get_buffer_guild(animated=animated)
