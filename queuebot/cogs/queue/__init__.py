@@ -337,9 +337,11 @@ class BlobQueue(Cog):
         logger.info('%s: Moving %s to public (approval) queue.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.move_to_public_queue(who=ctx.author.id, reason=reason)
-        await self.bot.log(f"<:{self.config.approve_emoji}> Suggestion #{suggestion.idx} force approved by "
-                           f"{ctx.author.mention} ({ctx.author.id})\n"
-                           f"{'Reason: ' + reason if reason else 'No reason provided.'}")
+        await self.bot.log(
+            f"<:{self.config.approve_emoji}> Suggestion #{suggestion.idx} force approved by "
+            f"{ctx.author.mention} ({ctx.author.id})\n"
+            f"{'Reason: ' + reason if reason else 'No reason provided.'}"
+        )
         await ctx.send(f"{ctx.bot.tick()} Successfully approved #{suggestion.idx}.")
 
     @commands.command()
@@ -354,9 +356,11 @@ class BlobQueue(Cog):
         logger.info('%s: Denying %s.', ctx.author, suggestion)
         reason = reason or None  # do not push empty strings
         await suggestion.deny(who=ctx.author.id, reason=reason)
-        await self.bot.log(f"<:{self.config.deny_emoji}> Suggestion #{suggestion.idx} force denied by "
-                           f"{ctx.author.mention} ({ctx.author.id})\n"
-                           f"{'Reason: ' + reason if reason else 'No reason provided.'}")
+        await self.bot.log(
+            f"<:{self.config.deny_emoji}> Suggestion #{suggestion.idx} force denied by "
+            f"{ctx.author.mention} ({ctx.author.id})\n"
+            f"{'Reason: ' + reason if reason else 'No reason provided.'}"
+        )
         await ctx.send(f"{ctx.bot.tick()} Successfully denied #{suggestion.idx}.")
 
     @commands.command()
@@ -515,6 +519,10 @@ class BlobQueue(Cog):
             who=ctx.author.id,
             reason='Manually revoked',
             revoke=True
+        )
+        await self.bot.log(
+            f"<:{self.config.deny_emoji}> Suggestion #{suggestion.idx} was manually revoked by "
+            f"{ctx.author.mention} ({ctx.author.id})"
         )
         await ctx.author.send('Suggestion has been revoked.')
 
