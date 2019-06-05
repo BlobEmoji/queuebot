@@ -18,11 +18,12 @@ def format_emoji_list(guild: discord.Guild) -> List[str]:
     emoji = sorted(guild.emojis, key=lambda x: (x.name[1:].lower() if x.animated else x.name.lower(), x.animated))
 
     messages = []
-    per = int(len(guild.emojis) / 25) or 1
 
-    for chunk in range(25):
-        start = chunk * per
-        messages.append('\n'.join(f'{em} = `:{em.name}:`' for em in emoji[start:start + per]) or '\u200b')
+    total = max(len(guild.emojis), 25)
+    per = int(round(total / 25, 0))
+
+    for idx in range(0, total, per):
+        messages.append('\n'.join(f'{em} = `:{em.name}:`' for em in emoji[idx:idx + per]) or '\u200b')
 
     return messages
 
