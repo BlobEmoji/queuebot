@@ -22,7 +22,7 @@ def format_emoji_list(guild: discord.Guild) -> List[str]:
 
     for chunk in range(25):
         start = chunk * per
-        messages.append('\n'.join(f'{em} = `:{em.name}:`' for em in emoji[start:start+per]) or '\u200b')
+        messages.append('\n'.join(f'{em} = `:{em.name}:`' for em in emoji[start:start + per]) or '\u200b')
 
     return messages
 
