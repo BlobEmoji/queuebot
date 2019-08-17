@@ -90,7 +90,10 @@ class Suggestion:
             description=self.status
         )
 
-        submission_time = f'{self.submission_time} UTC' or 'Unknown submission time'
+        submission_time = (
+            f'{self.submission_time} UTC' if self.submission_time
+            else 'Unknown submission time'
+        )
 
         if self.note:
             embed.description += f'\n\nNote: {self.note}'
