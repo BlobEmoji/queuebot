@@ -2,6 +2,7 @@
 
 __all__ = (
     'BOT_BROKEN_MSG',
+    'COUNCIL_QUEUE_MSG_NOT_FOUND',
     'BAD_SUGGESTION_MSG',
     'SUGGESTION_RECEIVED',
     'SUGGESTION_APPROVED',
@@ -9,6 +10,11 @@ __all__ = (
     'SUGGESTION_TOO_LARGE',
     'UPLOADED_EMOJI_NOT_FOUND',
     'SUBMITTER_NOT_FOUND'
+)
+
+COUNCIL_QUEUE_MSG_NOT_FOUND = (
+    "\N{WARNING SIGN} Couldn't delete the associated council queue message "
+    "(ID: `{suggestion[council_message_id]}`) for {suggestion[idx]}: {error}"
 )
 
 UPLOADED_EMOJI_NOT_FOUND = (

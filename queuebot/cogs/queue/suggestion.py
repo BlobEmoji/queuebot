@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 
 from queuebot.utils import (SUBMITTER_NOT_FOUND, SUGGESTION_APPROVED, SUGGESTION_DENIED, UPLOADED_EMOJI_NOT_FOUND,
-                            name_id)
+                            COUNCIL_QUEUE_MSG_NOT_FOUND, name_id)
 
 log = logging.getLogger(__name__)
 
@@ -206,8 +206,12 @@ class Suggestion:
         council_queue = self.bot.get_channel(self.bot.config.council_queue)
 
         # Delete the message in the council queue (cleanup).
-        council_message = await council_queue.fetch_message(self.council_message_id)
-        await council_message.delete()
+        try:
+            council_message = await council_queue.fetch_message(self.council_message_id)
+            await council_message.delete()
+        except discord.HTTPException as error:
+            await self.bot.log(COUNCIL_QUEUE_MSG_NOT_FOUND.format(
+                suggestion=self.record, error=error))
 
         # Set this suggestion's council queue message ID to null.
         await self.db.execute("""
