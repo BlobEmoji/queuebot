@@ -76,11 +76,15 @@ async def main():
     queuecog = bot.get_cog("BlobQueue")
 
     approve_name, approve_id = config.approve_emoji.split(':')
-    event = raw_models.RawReactionActionEvent({
-        'message_id': 294924538062569492,
-        'channel_id': config.council_queue,
-        'user_id': 69198249432449024,
-    }, discord.PartialEmoji(animated=False, name=approve_name, id=int(approve_id)))
+    event = raw_models.RawReactionActionEvent(
+        {
+            'message_id': 294924538062569492,
+            'channel_id': config.council_queue,
+            'user_id': 69198249432449024,
+        },
+        discord.PartialEmoji(animated=False, name=approve_name, id=int(approve_id)),
+        'REACTION_ADD',
+    )
 
     await queuecog.on_raw_reaction_add(event)
 
