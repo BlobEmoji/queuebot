@@ -11,7 +11,7 @@ class Context(commands.Context):
             self.bot.config.deny_emoji_id,
         ]
 
-        embed = embed or discord.Embed()
+        embed = embed if embed is not None else discord.Embed()
         embed.color = color or discord.Colour.red()
         embed.title = title or 'Are you sure?'
         embed.set_footer(text=str(self.author), icon_url=self.author.avatar_url)
