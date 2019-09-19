@@ -7,8 +7,8 @@ from discord.ext import commands
 class Context(commands.Context):
     async def confirm(self, description=None, *, embed=None, title=None, color=None):
         decision_emojis = [
-            self.bot.get_emoji(self.bot.config.approve_emoji_id),
-            self.bot.get_emoji(self.bot.config.deny_emoji_id),
+            self.bot.config.approve_emoji_id,
+            self.bot.config.deny_emoji_id,
         ]
 
         embed = embed or discord.Embed()
@@ -18,21 +18,21 @@ class Context(commands.Context):
         embed.description = description
 
         message = await self.send(embed=embed)
-        for emoji in decision_emojis:
-            await message.add_reaction(emoji)
+        for emoji_id in decision_emojis:
+            await message.add_reaction(self.bot.get_emoji(emoji_id))
 
-        def check(reaction, user):
-            return user == self.author and \
-                isinstance(reaction.emoji, discord.Emoji) and \
-                reaction.emoji in decision_emojis
+        def check(payload):
+            return payload.user_id == self.author.id and \
+                payload.emoji.is_custom_emoji() and \
+                payload.emoji.id in decision_emojis
 
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=60.0)
+            payload = await self.bot.wait_for('raw_reaction_add', check=check, timeout=60.0)
         except asyncio.TimeoutError:
             await self.send('Timed out.')
             return False
 
-        result = reaction.emoji == decision_emojis[0]
+        result = payload.emoji.id == decision_emojis[0]
 
         if not result:
             await self.send('Cancelled.')
