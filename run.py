@@ -42,7 +42,14 @@ async def main():
         else:
             break
 
-    bot = Queuebot(command_prefix='q!', config=config, db=db)
+    bot = Queuebot(
+        command_prefix='q!',
+        fetch_offline_members=False,
+        guild_subscriptions=False,
+        max_messages=None,
+        config=config,
+        db=db,
+    )
 
     bot.discover_exts('queuebot/cogs')
     bot.load_extension('jishaku')
