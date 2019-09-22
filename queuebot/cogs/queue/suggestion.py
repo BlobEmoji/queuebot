@@ -251,7 +251,7 @@ class Suggestion:
         log.info('Moving %s to the public queue.', self)
 
         user_id = self.user_id
-        user = self.bot.get_user(user_id)
+        user = await self.bot.fetch_user(user_id)
         emoji = self.bot.get_emoji(self.emoji_id)
 
         if not user:
@@ -347,7 +347,7 @@ class Suggestion:
             raise self.OperationError("This emoji has already been denied.")
 
         user_id = self.user_id
-        user = self.bot.get_user(user_id)
+        user = await self.bot.fetch_user(user_id)
         emoji = self.bot.get_emoji(self.emoji_id)
 
         if not emoji:
