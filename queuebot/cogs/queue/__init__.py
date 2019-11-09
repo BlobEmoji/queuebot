@@ -545,18 +545,18 @@ class BlobQueue(Cog):
             normalized = emoji_image.convert("RGBA").resize(new_sizing, Image.ANTIALIAS)
             bounding.paste(normalized, placement, mask=normalized)
 
-            larger = bounding.resize((64, 64), Image.ANTIALIAS)
+            larger = bounding.resize((96, 96), Image.ANTIALIAS)
             smaller = bounding.resize((44, 44), Image.ANTIALIAS)
 
-        background_im = Image.open(path.join(path.dirname(__file__), "test_base.png"))
+        with Image.open(path.join(path.dirname(__file__), "test_base.png")) as background_im:
 
-        background_im.paste(smaller, (346, 68), mask=smaller)
-        background_im.paste(larger, (137, 169), mask=larger)
+            background_im.paste(smaller, (367, 50), mask=smaller)
+            background_im.paste(larger, (129, 138), mask=larger)
 
-        background_im.paste(smaller, (348, 331), mask=smaller)
-        background_im.paste(larger, (139, 432), mask=larger)
+            background_im.paste(smaller, (369, 300), mask=smaller)
+            background_im.paste(larger, (129, 388), mask=larger)
 
-        return background_im.resize((410, 259), Image.ANTIALIAS)
+            return background_im.resize((375, 250), Image.ANTIALIAS)
 
     def test_backend(self, emoji_image: Image.Image):
         """Produce theme testing image for a given emoji."""
