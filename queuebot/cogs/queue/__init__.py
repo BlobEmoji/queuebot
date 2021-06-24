@@ -184,7 +184,7 @@ class BlobQueue(Cog):
             note,
         )
 
-        embed = discord.Embed(title=f'Suggestion {suggestion_id}', description=note)
+        embed = discord.Embed(title=f'Suggestion {suggestion_id}', description=f'{note}\nBy {message.author.mention}')
 
         queue = self.bot.get_channel(self.config.council_queue)
         msg = await queue.send(emoji, file=queue_file, embed=embed)
