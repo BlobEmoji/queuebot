@@ -34,7 +34,7 @@ def is_council_or_cooldown(rate, per, bucket_type=commands.BucketType.default):
         retry_after = bucket.update_rate_limit()
 
         if retry_after:
-            raise commands.CommandOnCooldown(bucket, retry_after)
+            raise commands.CommandOnCooldown(bucket, retry_after, cd.type)
         else:
             return True
 
