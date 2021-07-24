@@ -6,7 +6,7 @@ main:
   stage: build
   image: gorialis/discord.py:alpine-master
   services:
-    - postgres:10-alpine
+    - postgres:13-alpine
   variables:
     PGDATABASE: postgres
     PGPORT: 5432

@@ -32,7 +32,7 @@ Prerequisites
 This project has a number of requirements for deployment:
 
 - ``git``, for acquiring ``discord.py@rewrite``
-- A PostgreSQL >=9.6 server to store suggestion data
+- A PostgreSQL >=13 server to store suggestion data
 - A ``config.yaml`` file containing configuration data
 - ``libuv`` to enable ``uvloop``
 - Python requirements as in `requirements.txt <https://github.com/slice/queuebot/blob/master/requirements.txt>`__
@@ -60,7 +60,7 @@ and in Arch-based systems:
 
   pacman -S git
 
-PostgreSQL >=9.6
+PostgreSQL >=13
 ################
 
 Installation
@@ -116,7 +116,7 @@ Finally, we can install PostgreSQL:
 
 .. code-block:: sh
 
-  apt install postgresql-10
+  apt install postgresql-13
 
 Now that PostgreSQL is installed, you can use ``sudo -u postgres -i psql`` to log in as the default PostgreSQL user.
 
