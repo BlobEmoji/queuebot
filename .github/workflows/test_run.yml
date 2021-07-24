@@ -38,7 +38,7 @@ jobs:
 
       - name: Apply database schema
         run: |
-          psql < schema.sql
+          psql -U postgres -p 5432 -h localhost < schema.sql
 
       - name: Run tests
         run: |
