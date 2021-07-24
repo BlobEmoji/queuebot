@@ -4,7 +4,7 @@
 #
 version: 2
 jobs:
-  "alpine 3.6":
+  "alpine 3.9":
     docker:
       - image: gorialis/discord.py:alpine-master
         environment:
@@ -19,6 +19,7 @@ jobs:
           POSTGRES_PASSWORD: ""
           POSTGRES_PORT: 5432
           POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
 
     working_directory: ~/repo
 
@@ -47,7 +48,7 @@ jobs:
       - run:
           name: run tests
           command: |
-            cp .circleci/queuebot_config.yaml config.yaml
+            cp .github/queuebot_test_config.yaml config.yaml
             export PYTHONPATH=$PYTHONPATH:$(pwd)
             pytest -vs --cov=queuebot --cov-report term-missing:skip-covered
             flake8 .
@@ -61,4 +62,4 @@ workflows:
   version: 2
   build:
     jobs:
-      - "alpine 3.6"
+      - "alpine 3.9"

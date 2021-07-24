@@ -1,0 +1,53 @@
+name: Run tests
+on: push
+
+jobs:
+  tests-job:
+    runs-on: ubuntu-latest
+
+    # Postgres service
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: ""
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      
+      - name: Install dependencies
+        run: |
+          pip install -U coverage flake8 isort pytest pytest-cov
+          pip install -r requirements.txt
+      
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply database schema
+        run: |
+          psql < schema.sql
+
+      - name: Run tests
+        run: |
+          cp .github/queuebot_test_config.yaml config.yaml
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest -vs --cov=queuebot --cov-report term-missing:skip-covered
+          flake8 .
+          isort . --check-only --recursive
+
+      - name: Store test reports
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-reports
+          path: test-reports/*
