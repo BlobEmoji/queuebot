@@ -449,7 +449,7 @@ class Suggestion:
         channel = self.bot.get_channel(self.bot.config.council_queue)
         message = await channel.fetch_message(self.council_message_id)
 
-        embed = discord.Embed(title=f'Suggestion {self.idx}', description=note)
+        embed = discord.Embed(title=f'Suggestion {self.idx}', description=f'{note}\nBy <@!{self.user_id}>')
         await message.edit(embed=embed)
 
     @classmethod
