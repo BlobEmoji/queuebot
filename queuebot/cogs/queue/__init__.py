@@ -342,7 +342,7 @@ class BlobQueue(Cog):
             f"{ctx.author.mention} ({ctx.author.id})\n"
             f"{'Reason: ' + reason if reason else 'No reason provided.'}"
         )
-        await ctx.send(f"{ctx.bot.tick()} Successfully approved #{suggestion.idx}.")
+        await ctx.reply(f"{ctx.bot.tick()} Successfully approved #{suggestion.idx}.")
 
     @commands.command()
     @is_council()
@@ -361,29 +361,29 @@ class BlobQueue(Cog):
             f"{ctx.author.mention} ({ctx.author.id})\n"
             f"{'Reason: ' + reason if reason else 'No reason provided.'}"
         )
-        await ctx.send(f"{ctx.bot.tick()} Successfully denied #{suggestion.idx}.")
+        await ctx.reply(f"{ctx.bot.tick()} Successfully denied #{suggestion.idx}.")
 
     @commands.command()
     @is_council()
     async def vs(self, ctx, *emoji: PublicQueueOrEmojiConverter):
         """Creates VS vote between two emoji in the public queue."""
         if self.vs_lock.locked():
-            await ctx.send("A VS command is already being run, or has been run too recently.")
+            await ctx.reply("A VS command is already being run, or has been run too recently.")
             return
 
         async with self.vs_lock:
 
             if len(emoji) < 2:
-                await ctx.send("Need at least 2 emoji to do VS vote.")
+                await ctx.reply("Need at least 2 emoji to do VS vote.")
                 return
 
             if len(emoji) > 6:
-                await ctx.send("Refusing to do VS vote of greater than 6 emoji.")
+                await ctx.reply("Refusing to do VS vote of greater than 6 emoji.")
                 return
 
             id_set = set(x[1] for x in emoji)
             if len(id_set) < len(emoji):
-                await ctx.send("Can't have a VS vote with the same emoji appearing more than once.")
+                await ctx.reply("Can't have a VS vote with the same emoji appearing more than once.")
                 return
 
             async with ctx.typing():
@@ -439,7 +439,7 @@ class BlobQueue(Cog):
 
             merge_format = "\n".join(merge_list)
 
-            await ctx.send(f"{ctx.bot.tick()} Successfully created VS vote.\n{merge_format}")
+            await ctx.reply(f"{ctx.bot.tick()} Successfully created VS vote.\n{merge_format}")
             await asyncio.sleep(5)  # add extra effect to the Lock
 
     @commands.command(aliases=['info'])
@@ -493,7 +493,7 @@ class BlobQueue(Cog):
         tries = 0
         chosen = None
         while True:
-            if tries == 3:
+            if tries >= 3:
                 await ctx.author.send('I give up!')
                 return
 

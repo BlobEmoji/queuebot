@@ -1,39 +1,63 @@
 import asyncio
 
 import discord
+from discord import ui
 from discord.ext import commands
+
+
+class ConfirmationView(ui.View):
+    def __init__(self, owner: discord.User):
+        super().__init__(timeout=60)
+
+        self.owner: discord.User = owner
+        self.message: discord.Message = None
+        self.result: asyncio.Future = asyncio.get_event_loop().create_future()
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        return not self.owner or interaction.user.id == self.owner.id
+
+    async def on_timeout(self):
+        if not self.result.done():
+            self.result.set_exception(asyncio.TimeoutError())
+
+        if self.message:
+            await self.message.edit(view=None)
+
+    @ui.button(label="Yes", style=discord.ButtonStyle.green)
+    async def button_yes(self, button: ui.Button, interaction: discord.Interaction):
+        if not self.result.done():
+            self.result.set_result(True)
+
+        await interaction.response.edit_message(view=None)
+        self.stop()
+
+    @ui.button(label="No", style=discord.ButtonStyle.red)
+    async def button_no(self, button: ui.Button, interaction: discord.Interaction):
+        if not self.result.done():
+            self.result.set_result(False)
+
+        await interaction.response.edit_message(view=None)
+        self.stop()
 
 
 class Context(commands.Context):
     async def confirm(self, description=None, *, embed=None, title=None, color=None):
-        decision_emojis = [
-            self.bot.config.approve_emoji_id,
-            self.bot.config.deny_emoji_id,
-        ]
-
         embed = embed if embed is not None else discord.Embed()
+
         embed.color = color or discord.Colour.red()
         embed.title = title or 'Are you sure?'
-        embed.set_footer(text=str(self.author), icon_url=self.author.avatar_url)
+        embed.set_footer(text=str(self.author), icon_url=str(self.author.avatar))
         embed.description = description
 
-        message = await self.send(embed=embed)
-        for emoji_id in decision_emojis:
-            await message.add_reaction(self.bot.get_emoji(emoji_id))
-
-        def check(payload):
-            return payload.user_id == self.author.id and \
-                payload.emoji.is_custom_emoji() and \
-                payload.emoji.id in decision_emojis
+        view = ConfirmationView(self.author)
+        view.message = await self.send(embed=embed, view=view)
 
         try:
-            payload = await self.bot.wait_for('raw_reaction_add', check=check, timeout=60.0)
+            result = await view.result
         except asyncio.TimeoutError:
-            await self.send('Timed out.')
+            await view.message.reply('Timed out.')
             return False
 
-        result = payload.emoji.id == decision_emojis[0]
-
         if not result:
-            await self.send('Cancelled.')
+            await view.message.reply('Cancelled.')
         return result

@@ -45,8 +45,8 @@ class Errors(Cog):
         red_tick = ctx.bot.tick(False)
 
         if isinstance(exception, commands.CommandOnCooldown):
-            await ctx.send(f"{red_tick} You're doing that too quickly. "
-                           f"Please wait {exception.retry_after:.1f} seconds before trying again.")
+            await ctx.reply(f"{red_tick} You're doing that too quickly. "
+                            f"Please wait {exception.retry_after:.1f} seconds before trying again.")
             return
 
         if isinstance(exception, commands.CommandInvokeError):
@@ -62,12 +62,12 @@ class Errors(Cog):
             logger.error(f'Bot error [{ray}]: {trace} \n[/{ray}]')
 
             try:
-                await ctx.send(f'{red_tick} Error [{ray}]: {exception.original}' if operation_error else
-                               f'{red_tick} Sorry, an error has occurred. [{ray}]')
+                await ctx.reply(f'{red_tick} Error [{ray}]: {exception.original}' if operation_error else
+                                f'{red_tick} Sorry, an error has occurred. [{ray}]')
             except HTTPException:
                 pass
         elif isinstance(exception, commands.UserInputError):
-            await ctx.send(f'{red_tick} Input error: {exception}')
+            await ctx.reply(f'{red_tick} Input error: {exception}')
 
 
 def setup(bot):
