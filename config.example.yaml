@@ -2,11 +2,10 @@
 token: 'token'
 
 pg_credentials:
-  host: localhost
+  host: postgres
   port: 5432
-  user: 'myuser'
-  database: 'mydb'
-  password: 'mypassword'
+  user: postgres
+  database: postgres
   timeout: 60
 
 
