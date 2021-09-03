@@ -604,7 +604,12 @@ class BlobQueue(Cog):
             else:
                 raise commands.BadArgument("Couldn't resolve to suggestion or image.")
         elif not (any(role.id in ctx.bot.maker_roles for role in ctx.author.roles) and any(role.id in ctx.bot.council_roles for role in ctx.author.roles)):
-            await ctx.send(f"{red_tick} It appears that you attempted to test an emoji. Emoji arguments are restricted to Blob Maker+ due to constant misuse of this command.\nIf you want to legitimately test a blob that you have created yourself, then attach your blob's image file to the command instead.")
+            await ctx.send(
+                f"{red_tick} It appears that you attempted to test an emoji. "
+                f"Emoji arguments are restricted to Blob Maker+ due to constant misuse of this command.\n"
+                f"If you want to legitimately test a blob that you have created yourself, "
+                f"then attach your blob's image file to the command instead."
+            )
             return
 
         embed = discord.Embed(description = f"By {ctx.author.mention}")
@@ -628,19 +633,28 @@ class BlobQueue(Cog):
                 return
             
             if emoji_im.height != emoji_im.width:
-                embed.description = f"The resolution of this blob is not a square (where the height is equal to the width). There are spots on Discord where non-square emojis are displayed incorrectly.\n\n{embed.description}"
+                embed.description = (
+                    f"The resolution of this blob is not a square (where the height is equal to the width). There "
+                    f"are spots on Discord where non-square emoji are displayed incorrectly.\n\n{embed.description}"
+                )
                 embed.colour = discord.Colour.orange()
 
             if emoji_im.height < 128 or emoji_im.width < 128:
-                embed.description = f"The resolution of this blob is smaller than 128x128. Emojis smaller than 128x128 may look low-resolution compared to others.\n\n{embed.description}"
+                embed.description = (
+                    f"The resolution of this blob is smaller than 128x128. "
+                    f"Emoji smaller than 128x128 may look low-resolution compared to others.\n\n{embed.description}"
+                )
                 embed.colour = discord.Colour.red()
 
             if emoji_im.format == "JPEG":
-                embed.description = f"The tested blob is a JPEG, the JPEG format is not ideal for emojis due to it being a lossy image format. Please use PNGs when possible.\n\n{embed.description}"
+                embed.description = (
+                    f"The tested blob is a JPEG, the JPEG format is not ideal for emoji "
+                    f"due to it being a lossy image format. Please use PNGs when possible.\n\n{embed.description}"
+                )
                 embed.colour = discord.Colour.red()
 
             file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
-            await ctx.send(file=file, embed = embed)
+            await ctx.send(file=file, embed=embed)
 
     @commands.command(aliases=['sg'])
     @is_council()
