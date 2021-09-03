@@ -535,13 +535,6 @@ class BlobQueue(Cog):
         await ctx.send(embed=embed)
 
     @staticmethod
-    def remove_alpha(img, bg):
-        alpha = img.convert('RGBA').getchannel('A')
-        background = Image.new("RGBA", img.size, bg)
-        background.paste(img, mask=alpha)
-        return background
-
-    @staticmethod
     def generate_test_frame(emoji_image: Image.Image, is_gif: bool) -> Image.Image:
         max_dimension = max(emoji_image.size)
         scalar = 128 / max_dimension
