@@ -542,7 +542,7 @@ class BlobQueue(Cog):
         return background
 
     @staticmethod
-    def generate_test_frame(emoji_image: Image.Image) -> Image.Image:
+    def generate_test_frame(emoji_image: Image.Image, is_gif: bool) -> Image.Image:
         max_dimension = max(emoji_image.size)
         scalar = 128 / max_dimension
         new_sizing = int(emoji_image.width * scalar), int(emoji_image.height * scalar)
@@ -563,7 +563,12 @@ class BlobQueue(Cog):
             background_im.paste(smaller, (369, 300), mask=smaller)
             background_im.paste(larger, (129, 388), mask=larger)
 
-            return background_im.resize((375, 250), Image.ANTIALIAS).quantize(256, Image.MEDIANCUT)
+            background_im = background_im.resize((375, 250), Image.ANTIALIAS)
+
+            if is_gif:
+                background_im = background_im.quantize(256, Image.MEDIANCUT)
+
+            return background_im
 
     def test_backend(self, emoji_image: Image.Image):
         """Produce theme testing image for a given emoji."""
@@ -574,7 +579,7 @@ class BlobQueue(Cog):
         duration_listing = []
 
         for _ in range(600):  # never render more than 600 frames
-            frame_listing.append(self.generate_test_frame(emoji_image))
+            frame_listing.append(self.generate_test_frame(emoji_image, emoji_image.format == "GIF"))
             duration_listing.append(emoji_image.info.get("duration"))
 
             try:
