@@ -6,7 +6,7 @@ def is_police():
         if not ctx.guild:
             return False
 
-        return any(role.id in ctx.bot.config.authority_roles for role in ctx.author.roles)
+        return any(role.id in ctx.bot.authority_roles for role in ctx.author.roles)
     return commands.check(predicate)
 
 
@@ -19,7 +19,7 @@ def is_council():
     return commands.check(predicate)
 
 
-def is_council_or_cooldown(rate, per, bucket_type=commands.BucketType.default):
+def is_maker_or_cooldown(rate, per, bucket_type=commands.BucketType.default):
     cd = commands.CooldownMapping.from_cooldown(rate, per, bucket_type)
 
     def predicate(ctx: commands.Context) -> bool:
@@ -28,6 +28,10 @@ def is_council_or_cooldown(rate, per, bucket_type=commands.BucketType.default):
 
         if any(role.id in ctx.bot.council_roles for role in ctx.author.roles):
             # is council
+            return True
+        
+        if any(role.id in ctx.bot.maker_roles for role in ctx.author.roles):
+            # is maker
             return True
 
         bucket = cd.get_bucket(ctx.message)

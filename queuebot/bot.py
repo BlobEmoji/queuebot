@@ -31,8 +31,16 @@ class Queuebot(commands.Bot):
         self.session = aiohttp.ClientSession(loop=self.loop)
 
     @property
+    def authority_roles(self):
+        return set(self.config.get('authority_roles', []))
+
+    @property
     def council_roles(self):
         return set(self.config.get('council_roles', []))
+
+    @property
+    def maker_roles(self):
+        return set(self.config.get('maker_roles', []))
 
     @property
     def blob_emoji(self) -> discord.Guild:

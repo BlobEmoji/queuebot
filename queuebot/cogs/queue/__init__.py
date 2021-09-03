@@ -14,7 +14,7 @@ from discord import raw_models
 from discord.ext import commands
 from PIL import Image
 
-from queuebot.checks import is_council, is_council_or_cooldown
+from queuebot.checks import is_council, is_maker_or_cooldown
 from queuebot.cog import Cog
 from queuebot.cogs.queue.converters import PartialSuggestionConverter, PublicQueueOrEmojiConverter
 from queuebot.cogs.queue.suggestion import Suggestion
@@ -535,6 +535,13 @@ class BlobQueue(Cog):
         await ctx.send(embed=embed)
 
     @staticmethod
+    def remove_alpha(img, bg):
+        alpha = img.convert('RGBA').getchannel('A')
+        background = Image.new("RGBA", img.size, bg)
+        background.paste(img, mask=alpha)
+        return background
+
+    @staticmethod
     def generate_test_frame(emoji_image: Image.Image) -> Image.Image:
         max_dimension = max(emoji_image.size)
         scalar = 128 / max_dimension
@@ -556,7 +563,7 @@ class BlobQueue(Cog):
             background_im.paste(smaller, (369, 300), mask=smaller)
             background_im.paste(larger, (129, 388), mask=larger)
 
-            return background_im.resize((375, 250), Image.ANTIALIAS)
+            return background_im.resize((375, 250), Image.ANTIALIAS).quantize(256, Image.MEDIANCUT)
 
     def test_backend(self, emoji_image: Image.Image):
         """Produce theme testing image for a given emoji."""
@@ -564,11 +571,11 @@ class BlobQueue(Cog):
         buffer = BytesIO()
 
         frame_listing = []
-
-        interval = emoji_image.info.get("duration")
+        duration_listing = []
 
         for _ in range(600):  # never render more than 600 frames
             frame_listing.append(self.generate_test_frame(emoji_image))
+            duration_listing.append(emoji_image.info.get("duration"))
 
             try:
                 emoji_image.seek(emoji_image.tell() + 1)
@@ -578,7 +585,7 @@ class BlobQueue(Cog):
         initial_frame = frame_listing.pop(0)
 
         if frame_listing:
-            initial_frame.save(buffer, "gif", duration=interval, save_all=True, append_images=frame_listing, loop=0)
+            initial_frame.save(buffer, "gif", duration=duration_listing, save_all=True, append_images=frame_listing, loop=0)
             buffer.seek(0)
             return discord.File(filename="test.gif", fp=buffer)
         else:
@@ -587,7 +594,7 @@ class BlobQueue(Cog):
             return discord.File(filename="test.png", fp=buffer)
 
     @commands.command()
-    @is_council_or_cooldown(1, 60, commands.BucketType.user)
+    @is_maker_or_cooldown(1, 60, commands.BucketType.user)
     async def test(self, ctx, suggestion: PartialSuggestionConverter = None):
         """Test a suggestion's appearance on dark and light themes."""
 
@@ -598,6 +605,11 @@ class BlobQueue(Cog):
                 suggestion = (None, ctx.message.attachments[0].proxy_url)
             else:
                 raise commands.BadArgument("Couldn't resolve to suggestion or image.")
+        elif not (any(role.id in ctx.bot.maker_roles for role in ctx.author.roles) and any(role.id in ctx.bot.council_roles for role in ctx.author.roles)):
+            await ctx.send(f"{red_tick} It appears that you attempted to test an emoji. Emoji arguments are restricted to Blob Maker+ due to constant misuse of this command.\nIf you want to legitimately test a blob that you have created yourself, then attach your blob's image file to the command instead.")
+            return
+
+        embed = discord.Embed(description = f"By {ctx.author.mention}")
 
         async with ctx.channel.typing():
 
@@ -616,9 +628,21 @@ class BlobQueue(Cog):
             except OSError:
                 await ctx.send(f"{red_tick} Unable to identify the file type of the emoji.")
                 return
+            
+            if emoji_im.height != emoji_im.width:
+                embed.description = f"The resolution of this blob is not a square (where the height is equal to the width). There are spots on Discord where non-square emojis are displayed incorrectly.\n\n{embed.description}"
+                embed.colour = discord.Colour.orange()
+
+            if emoji_im.height < 128 or emoji_im.width < 128:
+                embed.description = f"The resolution of this blob is smaller than 128x128. Emojis smaller than 128x128 may look low-resolution compared to others.\n\n{embed.description}"
+                embed.colour = discord.Colour.red()
+
+            if emoji_im.format == "JPEG":
+                embed.description = f"The tested blob is a JPEG, the JPEG format is not ideal for emojis due to it being a lossy image format. Please use PNGs when possible.\n\n{embed.description}"
+                embed.colour = discord.Colour.red()
 
             file = await self.bot.loop.run_in_executor(None, self.test_backend, emoji_im)
-            await ctx.send(file=file)
+            await ctx.send(file=file, embed = embed)
 
     @commands.command(aliases=['sg'])
     @is_council()
