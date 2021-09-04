@@ -26,6 +26,10 @@ council_roles:
   - 1234567890
   - 9876543210
 
+# Roles which indicate that this person is a blob maker (Blob Maker, Blob Artisan, etc) 
+maker_roles:
+  - 1234567890
+  - 9876543210
 
 # ID of guilds in which the bot should update the emoji list
 blob_guilds:

@@ -26,6 +26,11 @@ council_roles:
   - 294928463536586754  # Blob Council
   - 300509002520068097  # Council Lite
 
+# Roles which indicate that this person is a blob maker (Blob Maker, Blob Artisan, etc) 
+maker_roles:
+  - 300510738026463232 # Blob Maker
+  - 298993418577903616 # Blob Artisan
+
 
 # ID of guilds in which the bot should update the emoji list
 blob_guilds:
