@@ -29,7 +29,7 @@ def is_maker_or_cooldown(rate, per, bucket_type=commands.BucketType.default):
         if any(role.id in ctx.bot.council_roles for role in ctx.author.roles):
             # is council
             return True
-        
+
         if any(role.id in ctx.bot.maker_roles for role in ctx.author.roles):
             # is maker
             return True

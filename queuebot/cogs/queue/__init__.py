@@ -583,7 +583,9 @@ class BlobQueue(Cog):
         initial_frame = frame_listing.pop(0)
 
         if frame_listing:
-            initial_frame.save(buffer, "gif", duration=duration_listing, save_all=True, append_images=frame_listing, loop=0)
+            initial_frame.save(
+                buffer, "gif", duration=duration_listing, save_all=True, append_images=frame_listing, loop=0
+            )
             buffer.seek(0)
             return discord.File(filename="test.gif", fp=buffer)
         else:
@@ -603,7 +605,7 @@ class BlobQueue(Cog):
                 suggestion = (None, ctx.message.attachments[0].proxy_url)
             else:
                 raise commands.BadArgument("Couldn't resolve to suggestion or image.")
-        elif not (any(role.id in ctx.bot.maker_roles for role in ctx.author.roles) and any(role.id in ctx.bot.council_roles for role in ctx.author.roles)):
+        elif not any(ctx.author.get_role(x) for x in (*ctx.bot.maker_roles, *ctx.bot.council_roles)):
             await ctx.send(
                 f"{red_tick} It appears that you attempted to test an emoji. "
                 f"Emoji arguments are restricted to Blob Maker+ due to constant misuse of this command.\n"
@@ -612,7 +614,7 @@ class BlobQueue(Cog):
             )
             return
 
-        embed = discord.Embed(description = f"By {ctx.author.mention}")
+        embed = discord.Embed(description=f"By {ctx.author.mention}")
 
         async with ctx.channel.typing():
 
@@ -631,7 +633,7 @@ class BlobQueue(Cog):
             except OSError:
                 await ctx.send(f"{red_tick} Unable to identify the file type of the emoji.")
                 return
-            
+
             if emoji_im.height != emoji_im.width:
                 embed.description = (
                     f"The resolution of this blob is not a square (where the height is equal to the width). There "
