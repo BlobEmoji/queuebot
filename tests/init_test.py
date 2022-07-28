@@ -3,6 +3,7 @@
 import asyncio
 import datetime
 
+import aiohttp
 import asyncpg
 import discord
 from discord import raw_models
@@ -26,15 +27,25 @@ async def main():
 
     db = await asyncpg.create_pool(**config.pg_credentials)
 
-    bot = Queuebot(command_prefix='q!', config=config, db=db)
+    intents = discord.Intents(
+        guilds=True,
+        emojis=True,
+        guild_messages=True,
+        guild_reactions=True,
+        message_content=True,
+    )
 
-    bot.discover_exts('queuebot/cogs')
+    session = aiohttp.ClientSession()
+
+    bot = Queuebot(command_prefix='q!', intents=intents, config=config, db=db, session=session)
+
+    await bot.discover_exts('queuebot/cogs')
 
     # imaginary login
     bot._connection.user = discord.ClientUser(state=bot._connection, data={
         "username": "QueueBot",
         "id": "210987654321098765",
-        "discriminator": 1337,
+        "discriminator": '1337',
         "avatar": None,
         "bot": True
     })
