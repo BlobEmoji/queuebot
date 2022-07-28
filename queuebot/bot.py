@@ -4,8 +4,8 @@ import typing
 from pathlib import Path
 
 import aiohttp
+import asyncpg
 import discord
-from asyncpg.pool import Pool
 from discord.ext import commands
 
 from queuebot.context import Context
@@ -26,9 +26,9 @@ class Queuebot(commands.Bot):
         self.config = kwargs.pop('config')
 
         # Database connection to PostgreSQL
-        self.db: Pool = kwargs.pop('db')
+        self.db: asyncpg.Pool = kwargs.pop('db')
 
-        self.session = aiohttp.ClientSession(loop=self.loop)
+        self.session: aiohttp.ClientSession = kwargs.pop('session')
 
     @property
     def authority_roles(self):
@@ -97,7 +97,7 @@ class Queuebot(commands.Bot):
         context = await self.get_context(msg, cls=Context)
         await self.invoke(context)
 
-    def discover_exts(self, directory: str):
+    async def discover_exts(self, directory: str):
         """Loads all extensions from a directory."""
         ignore = {'__pycache__', '__init__'}
 
@@ -109,7 +109,7 @@ class Queuebot(commands.Bot):
         logger.info('Loading extensions: %s', exts)
 
         for ext in exts:
-            self.load_extension('queuebot.cogs.' + ext)
+            await self.load_extension('queuebot.cogs.' + ext)
 
         self.to_load = list(self.extensions.keys()).copy()
         logger.info('To load: %s', self.to_load)

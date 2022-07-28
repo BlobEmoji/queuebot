@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import sys
-from time import sleep
 
+import aiohttp
 import asyncpg
+import discord
 
 from queuebot.bot import Queuebot
 from queuebot.config import config_from_file
@@ -42,21 +43,29 @@ async def main():
         else:
             break
 
+    intents = discord.Intents(
+        guilds=True,
+        emojis=True,
+        guild_messages=True,
+        guild_reactions=True,
+        message_content=True,
+    )
+
+    session = aiohttp.ClientSession()
+
     bot = Queuebot(
         command_prefix='q!',
-        fetch_offline_members=False,
-        guild_subscriptions=False,
+        intents=intents,
         max_messages=None,
         config=config,
         db=db,
+        session=session,
     )
 
-    bot.discover_exts('queuebot/cogs')
-    bot.load_extension('jishaku')
+    await bot.load_extension('jishaku')
+    await bot.discover_exts('queuebot/cogs')
+
     await bot.start(config.token)
 
 
-sleep(2)  # wait for postgres to start
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+asyncio.run(main())

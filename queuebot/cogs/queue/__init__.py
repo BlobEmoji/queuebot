@@ -739,5 +739,5 @@ class BlobQueue(Cog):
             await ctx.send(page)
 
 
-def setup(bot):
-    bot.add_cog(BlobQueue(bot))
+async def setup(bot):
+    await bot.add_cog(BlobQueue(bot))

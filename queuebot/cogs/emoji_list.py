@@ -56,5 +56,5 @@ class EmojiList(Cog):
             await message.edit(content=content)
 
 
-def setup(bot):
-    bot.add_cog(EmojiList(bot))
+async def setup(bot):
+    await bot.add_cog(EmojiList(bot))

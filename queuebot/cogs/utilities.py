@@ -34,5 +34,5 @@ class Utilities(Cog):
         await ctx.send('```\n' + rendered + '\n```')
 
 
-def setup(bot):
-    bot.add_cog(Utilities(bot))
+async def setup(bot):
+    await bot.add_cog(Utilities(bot))
