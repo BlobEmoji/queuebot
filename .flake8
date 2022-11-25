@@ -1,7 +1,7 @@
 [flake8]
-ignore = # don't complain about star (*) imports
-         F403,
-	     # don't complain about untraceable star import variables
+# F403 -> don't complain about star (*) imports
+# F405 -> don't complain about untraceable star import variables
+ignore = F403,
 	     F405
 max-line-length = 120
 exclude = .git,
