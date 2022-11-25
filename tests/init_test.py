@@ -39,6 +39,7 @@ async def main():
 
     bot = Queuebot(command_prefix='q!', intents=intents, config=config, db=db, session=session)
 
+    await bot._async_setup_hook()
     await bot.discover_exts('queuebot/cogs')
 
     # imaginary login
