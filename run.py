@@ -46,7 +46,7 @@ async def main():
     intents = discord.Intents(
         guilds=True,
         emojis=True,
-        guild_messages=True,
+        messages=True,
         guild_reactions=True,
         message_content=True,
     )
