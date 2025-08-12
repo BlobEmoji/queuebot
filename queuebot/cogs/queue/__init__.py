@@ -542,11 +542,11 @@ class BlobQueue(Cog):
         placement = (128 - new_sizing[0]) >> 1, (128 - new_sizing[1]) >> 1
 
         with Image.new("RGBA", (128, 128), (0, 0, 0, 0)) as bounding:
-            normalized = emoji_image.convert("RGBA").resize(new_sizing, Image.ANTIALIAS)
+            normalized = emoji_image.convert("RGBA").resize(new_sizing, Image.Resampling.BICUBIC)
             bounding.paste(normalized, placement, mask=normalized)
 
-            larger = bounding.resize((96, 96), Image.ANTIALIAS)
-            smaller = bounding.resize((44, 44), Image.ANTIALIAS)
+            larger = bounding.resize((96, 96), Image.Resampling.BICUBIC)
+            smaller = bounding.resize((44, 44), Image.Resampling.BICUBIC)
 
         with Image.open(path.join(path.dirname(__file__), "test_base.png")) as background_im:
 
@@ -556,10 +556,10 @@ class BlobQueue(Cog):
             background_im.paste(smaller, (369, 300), mask=smaller)
             background_im.paste(larger, (129, 388), mask=larger)
 
-            background_im = background_im.resize((375, 250), Image.ANTIALIAS)
+            background_im = background_im.resize((375, 250), Image.Resampling.BICUBIC)
 
             if is_gif:
-                background_im = background_im.quantize(256, Image.MEDIANCUT)
+                background_im = background_im.quantize(256, Image.Quantize.MEDIANCUT)
 
             return background_im
 
